@@ -25,7 +25,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 header{display:flex;justify-content:space-between;align-items:center;padding:12px 20px}
 h1{font-size:32px;font-weight:800;margin:0}
 .round{width:40px;height:40px;border-radius:50%;background:var(--accent);color:var(--accent-text);font-size:26px;line-height:1}
-.list{flex:1;overflow-y:auto;padding:0 20px 40px}
+.list{flex:1;overflow-y:auto;padding:0 20px 100px}
 .empty{text-align:center;color:var(--sub);margin-top:120px;line-height:1.6}
 /* 책 카드 */
 .card{display:flex;gap:14px;width:100%;text-align:left;background:var(--card);border-radius:18px;padding:14px;margin-bottom:12px}
@@ -53,6 +53,16 @@ textarea{height:220px;resize:none}
 .bar2 select{font:inherit;font-size:13px;color:var(--text);background:var(--card);border:0;border-radius:10px;padding:6px 8px}
 .mv{position:absolute;right:6px;bottom:6px;display:flex}
 .mv button{padding:6px 9px;font-size:15px;color:var(--sub)}
+#tabs{display:none;position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--bg);border-top:1px solid var(--border);padding-bottom:env(safe-area-inset-bottom,0px)}
+#tabs.on{display:flex}
+#tabs button{flex:1;padding:12px 0 10px;font-size:14px;font-weight:600;color:var(--sub)}
+#tabs button.on{color:var(--text)}
+.minis{display:flex;flex:none;width:112px;align-items:center}
+.mini{flex:none;width:44px;height:64px;margin-right:-22px;border-radius:6px;border:2px solid var(--card);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;background-size:cover;background-position:center}
+.mini.none{background:var(--border)}
+.pk input{width:22px;height:22px;margin:auto 0 auto 8px;flex:none}
+.shbtns{padding:0 20px 16px;display:flex;flex-direction:column;gap:10px}
+.shbtns .btn{margin:0}
 .back{font-size:16px;padding:6px 0}
 /* 읽기 화면 */
 .scroll{flex:1;min-height:0;overflow-y:auto;padding:28px 24px 64px}
@@ -61,8 +71,8 @@ textarea{height:220px;resize:none}
 #body p{margin:0 0 1em}
 #body.editing p{outline:1px dashed var(--border);border-radius:6px;padding:2px 4px;margin-left:-4px;margin-right:-4px;margin-bottom:1em}
 .toolbar button.on{background:var(--border);border-radius:12px}
-#sheet{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);align-items:flex-end;justify-content:center;z-index:10}
-#sheet.open{display:flex}
+#sheet,#dlg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);align-items:flex-end;justify-content:center;z-index:10}
+#sheet.open,#dlg.open{display:flex}
 .sheet{width:100%;max-width:640px;background:var(--bg);color:var(--text);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}
 .sheet textarea{height:38vh;margin-bottom:12px}
 .toolbar{display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--border);border-radius:18px;padding:0 6px}
@@ -88,6 +98,24 @@ textarea{height:220px;resize:none}
   <header><h1>내 서재</h1><button class="round" id="addBtn" aria-label="책 추가">+</button></header>
   <div class="bar2"><span id="sync"></span><select id="sort" aria-label="정렬"><option value="manual">직접 정렬</option><option value="recent">최근 읽은 순</option><option value="title">제목 순</option><option value="progress">진행률 순</option></select></div>
   <div class="list" id="list"></div>
+</section>
+
+<!-- 내 책장 (시리즈 묶음) -->
+<section id="shelves" class="view">
+  <header><h1>내 책장</h1><button class="round" id="newShelf" aria-label="책장 만들기">+</button></header>
+  <div class="list" id="shelfList"></div>
+</section>
+<section id="shelf" class="view">
+  <header><button class="back" id="shBack">‹ 책장</button><b id="shName"></b><span style="width:48px"></span></header>
+  <div class="list" id="shBooks" style="padding-bottom:12px"></div>
+  <div class="shbtns">
+    <div class="row"><button class="btn main" id="shAdd">책 추가</button><button class="btn sub" id="shSort">제목순 정렬</button></div>
+    <div class="row"><button class="btn sub" id="shRename">이름 변경</button><button class="btn sub" id="shDel">책장 삭제</button></div>
+  </div>
+</section>
+<section id="pick" class="view">
+  <header><button class="back" id="pkBack">‹ 취소</button><b>책 선택</b><button class="back" id="pkDone">완료</button></header>
+  <div class="list" id="pkList"></div>
 </section>
 
 <!-- 책 추가 화면 -->
@@ -133,6 +161,12 @@ textarea{height:220px;resize:none}
   </div>
 </section>
 
+<nav id="tabs"><button data-tab="home" class="on">📚 내 서재</button><button data-tab="shelves">🗂 내 책장</button></nav>
+<div id="dlg"><div class="sheet">
+  <p id="dTitle" style="font-weight:700;margin:0 0 12px;line-height:1.5"></p><input id="dInput">
+  <div class="row"><button class="btn sub" id="dNo" style="margin:0">취소</button><button class="btn main" id="dYes" style="margin:0">확인</button></div>
+</div></div>
+
 <!-- 문단 편집 시트 -->
 <div id="sheet"><div class="sheet">
   <textarea id="sText"></textarea>
@@ -158,6 +192,9 @@ const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','
 // ---------- 화면 전환 ----------
 function show(id){
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === id));
+  const main = id === 'home' || id === 'shelves'; // 탭은 서재/책장 화면에서만 보여요
+  $('tabs').classList.toggle('on', main);
+  $('tabs').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.tab === id));
 }
 
 // ---------- 테마 ----------
@@ -357,7 +394,9 @@ function turn(d){        // 페이지 넘기기
   const { w, pages } = pageInfo(), i = Math.min(pages - 1, Math.max(0, Math.round(sc.scrollLeft / w) + d));
   sc.scrollTo({ left: i * w, behavior: 'smooth' });
 }
-function openBook(id){
+let backTo = 'home';
+function openBook(id, from){
+  backTo = from || 'home';
   cur = books.find(b => b.id === id); if(!cur) return;
   ratio = cur.progress || 0; cur.lastRead = Date.now();
   $('bTitle').textContent = cur.title; paras = cur.content.split('\n\n'); renderBody(); editMode = false; $('body').classList.remove('editing'); $('editMode').classList.remove('on');
@@ -413,7 +452,7 @@ function changeFont(d){
 }
 $('fMinus').onclick = () => changeFont(-2);
 $('fPlus').onclick = () => changeFont(2);
-$('rBack').onclick = () => { persist(true); renderHome(); show('home'); };
+$('rBack').onclick = () => { persist(true); renderHome(); renderShelves(); show(backTo); };
 addEventListener('pagehide', persist);
 
 // ---------- 문단 편집: ✎ 버튼으로 편집 모드를 켜고, 고칠 문단을 누르면 편집 창이 열려요 ----------
@@ -477,9 +516,9 @@ async function initCloud() {
     const uid = user && await user.id();
     if (!db || !uid) { setSync('이 기기에만 저장 중 · 내보내기로 백업하세요'); return; }
     cloud = db.collection('data/users/' + uid);
-    const metas = {}, chunks = {};
+    const metas = {}, chunks = {}, shelfDocs = {};
     (await cloud.get()).docs.forEach(d => { const x = d.data();
-      if (x.kind === 'book') metas[x.id] = x; else if (x.kind === 'chunk') (chunks[x.bookId] = chunks[x.bookId] || [])[x.i] = x.text; });
+      if (x.kind === 'book') metas[x.id] = x; else if (x.kind === 'shelf') shelfDocs[x.id] = x; else if (x.kind === 'chunk') (chunks[x.bookId] = chunks[x.bookId] || [])[x.i] = x.text; });
     Object.values(metas).forEach(m => { // 계정 → 이 기기로 복원
       const parts = chunks[m.id] || [];
       if (parts.length < m.n || parts.some(p => p == null) || (cur && cur.id === m.id)) return;
@@ -488,6 +527,12 @@ async function initCloud() {
       const i = books.findIndex(b => b.id === m.id); if (i >= 0) books[i] = book; else books.push(book);
     });
     books.sort((a, b) => (a.order ?? 1e9) - (b.order ?? 1e9) || b.id - a.id); store.set('mybook:books', books); renderHome();
+    Object.values(shelfDocs).forEach(x => { // 계정의 책장을 이 기기로
+      const sh = { id: x.id, name: x.name, bookIds: x.bookIds || [], order: x.order || 0 }, i = shelves.findIndex(y => y.id === x.id);
+      if (i >= 0) shelves[i] = sh; else shelves.push(sh);
+    });
+    shelves.sort((a, b) => (a.order ?? 0) - (b.order ?? 0)); store.set('mybook:shelves', shelves); renderShelves();
+    for (const sh of shelves) if (!shelfDocs[sh.id]) cloudShelf(sh); // 이 기기에만 있던 책장은 계정으로
     for (const b of books) if (!metas[b.id]) await cloudSave(b, true); // 이 기기에만 있던 책은 계정으로 올리기
     setSync('☁︎ 계정에 저장됨');
   } catch (e) { setSync('이 기기에만 저장 중 · 내보내기로 백업하세요'); }
@@ -526,6 +571,98 @@ $('eEpub').onclick = async () => {
   saveFile(fname(b) + '.epub', await z.generateAsync({ type: 'blob', mimeType: 'application/epub+zip' }));
 };
 
+// ---------- 내 책장: 시리즈 책을 묶어서 분류 ----------
+let shelves = store.get('mybook:shelves', []);   // [{id, name, bookIds:[책 id 순서대로]}]
+let curShelf = null, pickSet = new Set();
+const shelfById = id => shelves.find(x => x.id === id);
+const bookById = id => books.find(b => b.id === id);
+const saveShelves = () => store.set('mybook:shelves', shelves);
+const cloudShelf = sh => (q = q.then(async () => { if (!cloud) return;
+  try { await cloud.doc('s_' + sh.id).set({ kind: 'shelf', id: sh.id, name: sh.name, bookIds: sh.bookIds, order: sh.order ?? 0 }); } catch (e) {} }));
+const cloudShelfDel = id => (q = q.then(async () => { if (!cloud) return; try { await cloud.doc('s_' + id).delete(); } catch (e) {} }));
+const touch = sh => { saveShelves(); cloudShelf(sh); renderShelf(); };
+const coverStyle = b => `background-color:${b.color};${b.cover ? `background-image:url(${b.cover})` : ''}`;
+const natural = (a, b) => a.title.localeCompare(b.title, 'ko', { numeric: true }); // 1권, 2권, 10권 순서로
+
+// 입력/확인 창 (브라우저 기본 prompt 대신 앱 안에서 띄움)
+function dialog(title, { input = false, value = '', ok = '확인' } = {}) {
+  return new Promise(res => {
+    const inp = $('dInput');
+    $('dTitle').textContent = title; inp.style.display = input ? '' : 'none'; inp.value = value; $('dYes').textContent = ok;
+    $('dlg').classList.add('open'); if (input) inp.focus();
+    const done = v => { $('dlg').classList.remove('open'); $('dYes').onclick = $('dNo').onclick = null; res(v); };
+    $('dYes').onclick = () => done(input ? inp.value.trim() : true);
+    $('dNo').onclick = () => done(null);
+  });
+}
+
+// 책장 목록 (표지 미리보기 + 권수)
+function renderShelves() {
+  $('shelfList').innerHTML = shelves.length ? shelves.map(sh => {
+    const bs = sh.bookIds.map(bookById).filter(Boolean);
+    const minis = bs.slice(0, 4).map(b => `<span class="mini" style="${coverStyle(b)}">${b.cover ? '' : esc(b.title.charAt(0))}</span>`).join('') || '<span class="mini none"></span>';
+    return `<div class="card shelfcard" data-id="${sh.id}" role="button" tabindex="0"><div class="minis">${minis}</div>
+      <div class="info"><div class="t">${esc(sh.name)}</div><div class="a">${bs.length}권</div></div></div>`;
+  }).join('') : '<div class="empty">아직 책장이 없어요.<br>오른쪽 위 + 버튼으로 시리즈 책장을 만들어 보세요.</div>';
+}
+$('shelfList').onclick = e => { const c = e.target.closest('.shelfcard'); if (c) { curShelf = c.dataset.id; renderShelf(); show('shelf'); } };
+$('newShelf').onclick = async () => {
+  const name = await dialog('새 책장 이름', { input: true }); if (!name) return;
+  const sh = { id: String(Date.now()), name, bookIds: [], order: shelves.length };
+  shelves.push(sh); saveShelves(); cloudShelf(sh); curShelf = sh.id; renderShelf(); show('shelf');
+};
+
+// 책장 안: 시리즈 순서대로 책 표시 (▲▼ 이동, ✕ 빼기)
+function renderShelf() {
+  const sh = shelfById(curShelf); if (!sh) return;
+  $('shName').textContent = sh.name;
+  const bs = sh.bookIds.map(bookById).filter(Boolean);
+  $('shBooks').innerHTML = bs.length ? bs.map((b, i) => {
+    const p = Math.round((b.progress || 0) * 100);
+    return `<div class="card" data-id="${b.id}" role="button" tabindex="0">
+      <div class="cover" style="${coverStyle(b)}">${b.cover ? '' : esc(b.title.charAt(0))}</div>
+      <div class="info"><div class="t">${esc(b.title)}</div><div class="a">${i + 1}번째 · ${esc(b.author)}</div>
+      <div class="bar"><i style="width:${p}%"></i></div><div class="pct">${p}% 읽음</div></div>
+      <div class="mv"><button class="up" style="visibility:${i ? 'visible' : 'hidden'}" aria-label="위로">▲</button><button class="dn" style="visibility:${i < bs.length - 1 ? 'visible' : 'hidden'}" aria-label="아래로">▼</button><button class="rm" aria-label="책장에서 빼기">✕</button></div></div>`;
+  }).join('') : '<div class="empty">이 책장은 비어 있어요.<br>아래 "책 추가"로 책을 담아 보세요.</div>';
+}
+$('shBooks').onclick = e => {
+  const c = e.target.closest('.card'), sh = shelfById(curShelf); if (!c || !sh) return;
+  const id = c.dataset.id, i = sh.bookIds.indexOf(id), up = e.target.closest('.up'), dn = e.target.closest('.dn');
+  if (up || dn) { const j = i + (up ? -1 : 1); if (j < 0 || j >= sh.bookIds.length) return;
+    [sh.bookIds[i], sh.bookIds[j]] = [sh.bookIds[j], sh.bookIds[i]]; touch(sh); }
+  else if (e.target.closest('.rm')) { sh.bookIds.splice(i, 1); touch(sh); }  // 서재에서 지우는 게 아니라 책장에서만 뺌
+  else openBook(id, 'shelf');
+};
+$('shBack').onclick = () => { renderShelves(); show('shelves'); };
+$('shSort').onclick = () => { const sh = shelfById(curShelf);
+  sh.bookIds = sh.bookIds.map(bookById).filter(Boolean).sort(natural).map(b => b.id); touch(sh); };
+$('shRename').onclick = async () => { const sh = shelfById(curShelf);
+  const name = await dialog('책장 이름', { input: true, value: sh.name }); if (name) { sh.name = name; touch(sh); } };
+$('shDel').onclick = async () => { const sh = shelfById(curShelf);
+  if (!await dialog(`"${sh.name}" 책장을 삭제할까요?\n(책은 서재에 그대로 남아요)`, { ok: '삭제' })) return;
+  shelves = shelves.filter(x => x.id !== sh.id); saveShelves(); cloudShelfDel(sh.id); renderShelves(); show('shelves'); };
+
+// 책 고르기: 서재의 책을 체크해서 책장에 담기
+$('shAdd').onclick = () => {
+  pickSet = new Set(shelfById(curShelf).bookIds);
+  $('pkList').innerHTML = books.length ? books.map(b => `<label class="card pk"><div class="cover" style="${coverStyle(b)}">${b.cover ? '' : esc(b.title.charAt(0))}</div>
+    <div class="info"><div class="t">${esc(b.title)}</div><div class="a">${esc(b.author)}</div></div>
+    <input type="checkbox" data-id="${b.id}" ${pickSet.has(b.id) ? 'checked' : ''}></label>`).join('')
+    : '<div class="empty">서재에 책이 없어요.</div>';
+  show('pick');
+};
+$('pkList').onchange = e => { const i = e.target; if (i.dataset.id) i.checked ? pickSet.add(i.dataset.id) : pickSet.delete(i.dataset.id); };
+$('pkBack').onclick = () => show('shelf');
+$('pkDone').onclick = () => {
+  const sh = shelfById(curShelf);
+  const kept = sh.bookIds.filter(id => pickSet.has(id));                       // 기존 순서 유지
+  const added = [...pickSet].filter(id => !kept.includes(id)).map(bookById).filter(Boolean).sort(natural).map(b => b.id);
+  sh.bookIds = [...kept, ...added]; touch(sh); show('shelf');                  // 새로 담은 책은 1권, 2권… 순으로 뒤에 붙임
+};
+$('tabs').onclick = e => { const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.tab === 'shelves') renderShelves(); else renderHome(); show(b.dataset.tab); };
+
 // ---------- 시작 ----------
 // 전체화면: 지원하는 환경(PC, iPad 등)에서만 버튼이 나타나요
 const de = document.documentElement;
@@ -537,7 +674,7 @@ if (document.fullscreenEnabled || document.webkitFullscreenEnabled) {
              : (de.requestFullscreen || de.webkitRequestFullscreen).call(de); } catch (e) {}
   };
 }
-applyTheme(); applyMode(); $('sort').value = sortMode; renderHome(); initCloud();
+applyTheme(); applyMode(); $('sort').value = sortMode; show('home'); renderHome(); renderShelves(); initCloud();
 navigator.storage?.persist?.();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
