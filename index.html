@@ -374,7 +374,7 @@ function openEdit(id) {
   paintPreview(); show('edit');
 }
 // 사진을 표지 크기(160x230)로 잘라 줄여서 저장 용량을 아낌
-const COVW = 240, COVH = 344; // 표지 크기
+const COVW = 540, COVH = 810; // 표지 최대 크기 (큰 표지 화면에서도 선명하도록)
 // 검은 화면 판별: 샘플 픽셀이 전부 거의 검정이면 변환 실패로 봐요
 const isBlack = c => { const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
   for (let i = 0; i < d.length; i += 40) if (d[i] + d[i + 1] + d[i + 2] > 30) return false; return true; };
@@ -390,10 +390,15 @@ function shrink(src, sw, sh) {
     const c = whiteCanvas(Math.floor(sw / 2), Math.floor(sh / 2));
     c.getContext('2d').drawImage(src, 0, 0, c.width, c.height); src = c; sw = c.width; sh = c.height;
   }
-  const out = whiteCanvas(COVW, COVH), k = Math.max(COVW / sw, COVH / sh);
-  out.getContext('2d').drawImage(src, (COVW - sw * k) / 2, (COVH - sh * k) / 2, sw * k, sh * k);
+  // 표지 비율(2:3)로 가운데를 잘라내고, 원본이 작으면 억지로 키우지 않아요 (키우면 흐려져요)
+  const cw = Math.min(sw, sh * COVW / COVH), ch = cw * COVH / COVW;
+  const ow = Math.min(COVW, Math.round(cw)), oh = Math.round(ow * COVH / COVW), out = whiteCanvas(ow, oh);
+  out.getContext('2d').drawImage(src, (sw - cw) / 2, (sh - ch) / 2, cw, ch, 0, 0, ow, oh);
   return out;
 }
+// JPEG로 저장 (계정 저장 문서 크기 제한을 넘지 않도록 필요하면 품질을 조금 낮춤)
+const enc = c => { let q = 0.88, u = c.toDataURL('image/jpeg', q);
+  while (u.length > 160000 && q > 0.5) { q -= 0.08; u = c.toDataURL('image/jpeg', q); } return u; };
 async function makeCover(blob) {
   const url = URL.createObjectURL(blob);
   const tries = [ // 안 되면 다음 방법으로 차례로 시도
@@ -404,10 +409,10 @@ async function makeCover(blob) {
   let first = null;
   try {
     for (const t of tries) {
-      try { const c = await t(); first = first || c; if (!isBlack(c)) return c.toDataURL('image/jpeg', 0.8); } catch (e) {}
+      try { const c = await t(); first = first || c; if (!isBlack(c)) return enc(c); } catch (e) {}
     }
   } finally { URL.revokeObjectURL(url); }
-  if (first) return first.toDataURL('image/jpeg', 0.8); // 정말 검은 사진이면 그대로
+  if (first) return enc(first); // 정말 검은 사진이면 그대로
   throw new Error('이미지를 읽을 수 없어요');
 }
 $('eFile').onchange = async e => {
