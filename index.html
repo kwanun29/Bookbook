@@ -63,7 +63,6 @@ textarea{height:220px;resize:none}
 .pk input{width:22px;height:22px;margin:auto 0 auto 8px;flex:none}
 .shbtns{padding:0 20px 16px;display:flex;flex-direction:column;gap:10px}
 .shbtns .btn{margin:0}
-#tMode{width:100%;font:inherit;font-size:16px;color:var(--text);background:var(--card);border:0;border-radius:14px;padding:14px;margin-bottom:12px}
 .back{font-size:16px;padding:6px 0}
 /* 읽기 화면 */
 .scroll{flex:1;min-height:0;overflow-y:auto;padding:28px 24px 64px}
@@ -123,11 +122,6 @@ textarea{height:220px;resize:none}
 <section id="add" class="view">
   <header><button class="back" id="addBack">‹ 뒤로</button><b>책 추가</b><span style="width:48px"></span></header>
   <div class="form">
-    <select id="tMode" aria-label="제목 정하기">
-      <option value="auto">제목: 자동 (파일 정보, 없으면 본문 첫 줄)</option>
-      <option value="l1">제목: 본문 첫 줄</option>
-      <option value="l2">제목: 본문 첫 두 줄</option>
-    </select>
     <label class="btn main" for="file" style="display:block;text-align:center;cursor:pointer">EPUB 파일 선택</label>
     <input type="file" id="file" accept=".epub,application/epub+zip" hidden>
     <p class="status" id="status"></p>
@@ -189,7 +183,7 @@ const store = {
   get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d }catch(e){ return d } },
   set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); return true }catch(e){ return false } }
 };
-let books = store.get('mybook:books', []);
+let books = [];   // 시작할 때 loadLocal()이 기기 저장소(IndexedDB)에서 채워 넣어요
 let fontSize = store.get('mybook:font', 18);
 let theme = store.get('mybook:theme', null);
 const COLORS = ['#3B5BDB','#C2255C','#2F9E44','#E8590C','#7048E8','#0C8599'];
@@ -244,7 +238,7 @@ function move(id, d) { // 책을 위/아래로 한 칸 이동
   const i = books.findIndex(b => b.id === id), j = i + d;
   if (i < 0 || j < 0 || j >= books.length) return;
   renumber(); [books[i], books[j]] = [books[j], books[i]]; renumber();
-  save(); cloudSave(books[i], false); cloudSave(books[j], false);
+  books.forEach(saveMeta); cloudSave(books[i], false); cloudSave(books[j], false);
   renderHome();
 }
 $('sort').onchange = e => { sortMode = e.target.value; store.set('mybook:sort', sortMode); renderHome(); };
@@ -254,14 +248,15 @@ const setStatus = t => $('status').textContent = t;
 $('addBack').onclick = () => { setStatus(''); show('home'); };
 
 // 책 한 권을 저장 (저장 공간이 모자라면 실패 안내)
-function addBook({ title, author, content, cover }) {
-  books.unshift({ id: String(Date.now()), title, author: author || '작자 미상', content, cover: cover || '',
-                  progress: 0, color: COLORS[books.length % COLORS.length] });
-  if (!save()) {
-    books.shift(); setStatus('저장 공간이 부족해요. 더 작은 책을 시도해 주세요.'); return;
+async function addBook({ title, author, content, cover }) {
+  const book = { id: String(Date.now()), title, author: author || '작자 미상', content, cover: cover || '',
+                 progress: 0, color: COLORS[books.length % COLORS.length] };
+  books.unshift(book); renumber(); setStatus('저장 중…');
+  if (!(await saveBook(book)) && !cloud) { // 기기 저장소가 가득 찬 경우
+    books.shift(); renumber(); setStatus('저장 공간이 부족해요. 기기의 저장 공간을 확인해 주세요.'); return;
   }
-  renumber(); cloudSave(books[0], true);
-  setStatus(''); renderHome(); show('home');
+  await Promise.all(books.slice(1).map(saveMeta)); // 순서 번호 갱신
+  cloudSave(book, true); setStatus(''); renderHome(); show('home');
 }
 
 // ---- EPUB 읽기: EPUB은 zip 파일이라 압축을 풀어 본문 텍스트만 뽑아냅니다 ----
@@ -319,19 +314,13 @@ async function parseEpub(file) {
 }
 
 // ---- 제목 정하기: 본문의 첫 줄(또는 첫 두 줄)을 제목으로 ----
-const firstLines = (text, n) => text.split(/\n+/).map(t => t.trim()).filter(Boolean).slice(0, n).join(' ').slice(0, 80);
-$('tMode').value = store.get('mybook:tmode', 'auto');
-$('tMode').onchange = e => store.set('mybook:tmode', e.target.value);
-function pickTitle(r, fileName) {
-  const mode = $('tMode').value, base = fileName.replace(/\.epub$/i, '');
-  const junk = !r.title || r.title === base || /^(index|untitled|unknown|title|book|\d+)$/i.test(r.title.trim()); // "index" 같은 의미 없는 제목
-  const n = mode === 'l2' ? 2 : 1;
-  return (mode !== 'auto' || junk ? firstLines(r.content, n) : '') || r.title;
-}
+const firstLines = (text, n) => text.split(/\n+/).map(t => t.trim()).filter(Boolean).slice(0, n).join(' ').slice(0, 100);
+// 파일을 올리면 본문 첫 줄 + 둘째 줄을 자동으로 제목에 사용 (예: "작품명 2장")
+const pickTitle = r => firstLines(r.content, 2) || r.title;
 $('file').onchange = async e => {
   const f = e.target.files[0]; if (!f) return;
   setStatus('불러오는 중…');
-  try { const r = await parseEpub(f); r.title = pickTitle(r, f.name); addBook(r); }
+  try { const r = await parseEpub(f); r.title = pickTitle(r); await addBook(r); }
   catch (err) { setStatus('EPUB을 읽을 수 없어요: ' + err.message); }
   e.target.value = ''; // 같은 파일을 다시 선택할 수 있게 초기화
 };
@@ -374,13 +363,13 @@ $('eTitle').oninput = paintPreview; // 표지 글자(첫 글자) 미리보기 �
 $('eBack').onclick = () => show('home');
 $('eT1').onclick = () => { $('eTitle').value = firstLines(editing().content, 1) || $('eTitle').value; paintPreview(); };
 $('eT2').onclick = () => { $('eTitle').value = firstLines(editing().content, 2) || $('eTitle').value; paintPreview(); };
-$('eSave').onclick = () => {
+$('eSave').onclick = async () => {
   const title = $('eTitle').value.trim();
   if (!title) { $('eStatus').textContent = '제목을 입력해 주세요.'; return; }
   const b = editing(), old = { ...b };
   b.title = title; b.author = $('eAuthor').value.trim() || '작자 미상';
   if (newCover !== undefined) b.cover = newCover;
-  if (!save()) { Object.assign(b, old); $('eStatus').textContent = '저장 공간이 부족해요.'; return; }
+  if (!(await saveMeta(b)) && !cloud) { Object.assign(b, old); $('eStatus').textContent = '저장 공간이 부족해요.'; return; }
   cloudSave(b, false);
   renderHome(); show('home');
 };
@@ -427,7 +416,7 @@ function openBook(id, from){
 let cloudT = null;
 function persist(now){
   if (!cur) return;
-  cur.progress = ratio; cur.lastRead = Date.now(); store.set('mybook:books', books);
+  cur.progress = ratio; cur.lastRead = Date.now(); saveMeta(cur);
   clearTimeout(cloudT);
   if (now) cloudSave(cur, false); else cloudT = setTimeout(() => cloudSave(cur, false), 2500);
 }
@@ -490,11 +479,11 @@ $('body').onclick = e => {
   $('sText').value = paras[sheetI].replace(/^\n+/, '');
   $('sheet').classList.add('open'); $('sText').focus();
 };
-function commit(text) { // text가 빈 문자열이면 문단 삭제
+async function commit(text) { // text가 빈 문자열이면 문단 삭제
   const old = paras[sheetI], lead = old.match(/^\n*/)[0];
   paras[sheetI] = text ? lead + text : '';
   cur.content = paras.join('\n\n');
-  if (!save()) { // 저장 실패 시 되돌리기
+  if (!(await saveContent(cur)) && !cloud) { // 저장 실패 시 되돌리기
     paras[sheetI] = old; cur.content = paras.join('\n\n'); alert('저장 공간이 부족해요.'); return;
   }
   if (text) sheetEl.textContent = paras[sheetI]; else sheetEl.remove();
@@ -509,7 +498,40 @@ $('sCancel').onclick = () => $('sheet').classList.remove('open');
 // 한 문서는 256KiB 제한이라 본문을 6만 자씩 쪼개 저장해요.
 let cloud = null, q = Promise.resolve();
 const CH = 60000, chunkCache = {};
-const save = () => store.set('mybook:books', books) || !!cloud;
+// ---------- 기기 저장소 (IndexedDB): localStorage(약 5MB)보다 훨씬 많이 저장돼요 ----------
+// 책 정보(meta, 작음)와 본문(content, 큼)을 따로 저장해서 읽은 위치 저장이 가볍도록 했어요.
+let idb = null;
+const req = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+const put = (name, key, val) => new Promise((res, rej) => {
+  const t = idb.transaction(name, 'readwrite'); t.objectStore(name).put(val, key);
+  t.oncomplete = () => res(true); t.onerror = t.onabort = () => rej(t.error);
+});
+const safe = pr => pr.then(() => true, () => false); // 실패(저장 공간 부족 등)하면 false
+const metaOf = b => ({ id: b.id, title: b.title, author: b.author, cover: b.cover || '', color: b.color,
+                       order: b.order ?? 0, progress: b.progress || 0, lastRead: b.lastRead || 0 });
+const saveMeta = b => idb ? safe(put('meta', b.id, metaOf(b))) : Promise.resolve(store.set('mybook:books', books));
+const saveContent = b => idb ? safe(put('content', b.id, b.content)) : Promise.resolve(store.set('mybook:books', books));
+const saveBook = async b => idb ? (await saveContent(b)) && (await saveMeta(b)) : store.set('mybook:books', books);
+async function loadLocal() {
+  try {
+    idb = await new Promise((res, rej) => { const r = indexedDB.open('mybook', 1);
+      r.onupgradeneeded = () => { r.result.createObjectStore('meta'); r.result.createObjectStore('content'); };
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+    const t = idb.transaction(['meta', 'content']);
+    const [metas, keys, vals] = await Promise.all([req(t.objectStore('meta').getAll()),
+      req(t.objectStore('content').getAllKeys()), req(t.objectStore('content').getAll())]);
+    const text = new Map(keys.map((k, i) => [k, vals[i]]));
+    books = metas.map(m => ({ ...m, content: text.get(m.id) || '' }));
+    // 이전 버전(localStorage)에 저장된 책이 있으면 새 저장소로 옮겨요
+    const old = store.get('mybook:books', null);
+    if (old && old.length) {
+      let all = true;
+      for (const [i, b] of old.entries()) if (!books.some(x => x.id === b.id)) { b.order = i; books.push(b); all = (await saveBook(b)) && all; }
+      if (all) try { localStorage.removeItem('mybook:books'); } catch (e) {}
+    }
+  } catch (e) { idb = null; books = store.get('mybook:books', []); } // IndexedDB를 못 쓰면 예전 방식 사용
+  books.sort((a, b) => (a.order ?? 1e9) - (b.order ?? 1e9) || b.id - a.id);
+}
 const setSync = t => $('sync').textContent = t;
 const chunksOf = c => { const a = []; for (let i = 0; i < c.length; i += CH) a.push(c.slice(i, i + CH)); return a.length ? a : ['']; };
 const cloudSave = (b, withContent) => (q = q.then(() => cloudSaveNow(b, withContent)));
@@ -535,7 +557,7 @@ async function initCloud() {
     const uid = user && await user.id();
     if (!db || !uid) { setSync('이 기기에만 저장 중 · 내보내기로 백업하세요'); return; }
     cloud = db.collection('data/users/' + uid);
-    const metas = {}, chunks = {}, shelfDocs = {};
+    const metas = {}, chunks = {}, shelfDocs = {}, restored = [];
     (await cloud.get()).docs.forEach(d => { const x = d.data();
       if (x.kind === 'book') metas[x.id] = x; else if (x.kind === 'shelf') shelfDocs[x.id] = x; else if (x.kind === 'chunk') (chunks[x.bookId] = chunks[x.bookId] || [])[x.i] = x.text; });
     Object.values(metas).forEach(m => { // 계정 → 이 기기로 복원
@@ -543,9 +565,11 @@ async function initCloud() {
       if (parts.length < m.n || parts.some(p => p == null) || (cur && cur.id === m.id)) return;
       chunkCache[m.id] = parts;
       const book = { id: m.id, title: m.title, author: m.author, cover: m.cover, progress: m.progress, color: m.color, order: m.order, lastRead: m.lastRead, content: parts.join('') };
-      const i = books.findIndex(b => b.id === m.id); if (i >= 0) books[i] = book; else books.push(book);
+      const i = books.findIndex(b => b.id === m.id), same = i >= 0 && books[i].content === book.content;
+      if (i >= 0) books[i] = book; else books.push(book); restored.push([book, !same]);
     });
-    books.sort((a, b) => (a.order ?? 1e9) - (b.order ?? 1e9) || b.id - a.id); store.set('mybook:books', books); renderHome();
+    books.sort((a, b) => (a.order ?? 1e9) - (b.order ?? 1e9) || b.id - a.id); renderHome();
+    for (const [b, full] of restored) await (full ? saveBook(b) : saveMeta(b));
     Object.values(shelfDocs).forEach(x => { // 계정의 책장을 이 기기로
       const sh = { id: x.id, name: x.name, bookIds: x.bookIds || [], order: x.order || 0 }, i = shelves.findIndex(y => y.id === x.id);
       if (i >= 0) shelves[i] = sh; else shelves.push(sh);
@@ -693,7 +717,8 @@ if (document.fullscreenEnabled || document.webkitFullscreenEnabled) {
              : (de.requestFullscreen || de.webkitRequestFullscreen).call(de); } catch (e) {}
   };
 }
-applyTheme(); applyMode(); $('sort').value = sortMode; show('home'); renderHome(); renderShelves(); initCloud();
+applyTheme(); applyMode(); $('sort').value = sortMode; show('home'); renderShelves();
+loadLocal().then(() => { renderHome(); renderShelves(); initCloud(); });
 navigator.storage?.persist?.();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
