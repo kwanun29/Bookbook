@@ -136,8 +136,8 @@ textarea{height:220px;resize:none}
 <section id="add" class="view">
   <header><button class="back" id="addBack">‹ 뒤로</button><b>책 추가</b><span style="width:48px"></span></header>
   <div class="form">
-    <label class="btn main" for="file" style="display:block;text-align:center;cursor:pointer">EPUB 파일 선택</label>
-    <input type="file" id="file" accept=".epub,application/epub+zip" hidden>
+    <label class="btn main" for="file" style="display:block;text-align:center;cursor:pointer">EPUB / TXT 파일 선택</label>
+    <input type="file" id="file" accept=".epub,.txt,application/epub+zip,text/plain" hidden>
     <p class="status" id="status"></p>
     <button class="btn sub" id="sample">샘플 책 추가 (테스트용)</button>
   </div>
@@ -346,11 +346,25 @@ async function parseEpub(file) {
 const firstLines = (text, n) => text.split(/\n+/).map(t => t.trim()).filter(Boolean).slice(0, n).join(' ').slice(0, 100);
 // 파일을 올리면 본문 첫 줄 + 둘째 줄을 자동으로 제목에 사용 (예: "작품명 2장")
 const pickTitle = r => firstLines(r.content, 2) || r.title;
+// ---- TXT 읽기: 글자 깨짐 방지를 위해 인코딩(UTF-8 / 옛 한글 CP949 / UTF-16)을 자동으로 판별 ----
+async function parseTxt(file) {
+  const buf = new Uint8Array(await file.arrayBuffer());
+  let enc = 'utf-8';
+  if (buf[0] === 0xFF && buf[1] === 0xFE) enc = 'utf-16le'; else if (buf[0] === 0xFE && buf[1] === 0xFF) enc = 'utf-16be';
+  let text;
+  try { text = new TextDecoder(enc, { fatal: true }).decode(buf); }
+  catch (e) { text = new TextDecoder('euc-kr').decode(buf); } // UTF-8이 아니면 옛날 한글 txt로 간주
+  text = text.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
+  // 한 줄 = 한 문단으로 정리 (빈 줄은 없애고 문단 사이만 띄움)
+  const content = text.split('\n').map(l => l.trim()).filter(Boolean).join('\n\n');
+  if (!content) throw new Error('내용이 비어 있어요');
+  return { title: file.name.replace(/\.txt$/i, ''), author: '', content, cover: '' };
+}
 $('file').onchange = async e => {
   const f = e.target.files[0]; if (!f) return;
   setStatus('불러오는 중…');
-  try { const r = await parseEpub(f); r.title = pickTitle(r); await addBook(r); }
-  catch (err) { setStatus('EPUB을 읽을 수 없어요: ' + err.message); }
+  try { const r = await (/\.txt$/i.test(f.name) ? parseTxt(f) : parseEpub(f)); r.title = pickTitle(r); await addBook(r); }
+  catch (err) { setStatus('파일을 읽을 수 없어요: ' + err.message); }
   e.target.value = ''; // 같은 파일을 다시 선택할 수 있게 초기화
 };
 
