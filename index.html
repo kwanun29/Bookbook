@@ -49,6 +49,10 @@ textarea{height:220px;resize:none}
 .t{padding-right:26px}
 .prev{width:120px;height:172px;border-radius:14px;margin:4px auto 16px;color:#fff;font-size:44px;font-weight:700;display:flex;align-items:center;justify-content:center;background-size:cover;background-position:center}
 .row{display:flex;gap:10px}.row .btn{margin-top:0}
+.bar2{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:0 20px 8px;font-size:12px;color:var(--sub)}
+.bar2 select{font:inherit;font-size:13px;color:var(--text);background:var(--card);border:0;border-radius:10px;padding:6px 8px}
+.mv{position:absolute;right:6px;bottom:6px;display:flex}
+.mv button{padding:6px 9px;font-size:15px;color:var(--sub)}
 .back{font-size:16px;padding:6px 0}
 /* 읽기 화면 */
 .scroll{flex:1;min-height:0;overflow-y:auto;padding:28px 24px 64px}
@@ -82,7 +86,7 @@ textarea{height:220px;resize:none}
 <!-- 홈 화면 -->
 <section id="home" class="view active">
   <header><h1>내 서재</h1><button class="round" id="addBtn" aria-label="책 추가">+</button></header>
-  <div class="status" id="sync" style="margin:0 20px 8px;text-align:left;font-size:12px"></div>
+  <div class="bar2"><span id="sync"></span><select id="sort" aria-label="정렬"><option value="manual">직접 정렬</option><option value="recent">최근 읽은 순</option><option value="title">제목 순</option><option value="progress">진행률 순</option></select></div>
   <div class="list" id="list"></div>
 </section>
 
@@ -166,17 +170,40 @@ $('theme').onclick = () => { theme = isDark() ? 'light' : 'dark'; store.set('myb
 
 // ---------- 홈: 책 카드 목록 ----------
 function renderHome(){
-  $('list').innerHTML = books.length ? books.map(b => {
+  $('list').innerHTML = books.length ? view().map((b, i, arr) => {
     const p = Math.round((b.progress || 0) * 100);
+    const mv = sortMode === 'manual' ? `<div class="mv"><button class="up" style="visibility:${i ? 'visible' : 'hidden'}" aria-label="위로">▲</button><button class="dn" style="visibility:${i < arr.length - 1 ? 'visible' : 'hidden'}" aria-label="아래로">▼</button></div>` : '';
     return `<div class="card" data-id="${b.id}" role="button" tabindex="0"><button class="edit" aria-label="편집">✎</button>
       <div class="cover" style="background-color:${b.color};${b.cover ? `background-image:url(${b.cover})` : ''}">${b.cover ? '' : esc(b.title.charAt(0))}</div>
       <div class="info"><div class="t">${esc(b.title)}</div><div class="a">${esc(b.author)}</div>
-      <div class="bar"><i style="width:${p}%"></i></div><div class="pct">${p}% 읽음</div></div></div>`;
+      <div class="bar"><i style="width:${p}%"></i></div><div class="pct">${p}% 읽음</div></div>${mv}</div>`;
   }).join('') : '<div class="empty">아직 책이 없어요.<br>오른쪽 위 + 버튼으로 추가해 보세요.</div>';
 }
 $('list').onclick = e => { const c = e.target.closest('.card'); if(!c) return;
-  if (e.target.closest('.edit')) openEdit(c.dataset.id); else openBook(c.dataset.id); };
+  if (e.target.closest('.edit')) openEdit(c.dataset.id);
+  else if (e.target.closest('.up')) move(c.dataset.id, -1);
+  else if (e.target.closest('.dn')) move(c.dataset.id, 1);
+  else openBook(c.dataset.id); };
 $('addBtn').onclick = () => { setStatus(''); show('add'); };
+
+// ---------- 서재 정렬 ----------
+let sortMode = store.get('mybook:sort', 'manual'); // manual(직접) | recent | title | progress
+function view() { // 화면에 보여줄 순서 (직접 정렬이면 저장된 순서 그대로)
+  const a = [...books];
+  if (sortMode === 'title') a.sort((x, y) => x.title.localeCompare(y.title, 'ko'));
+  else if (sortMode === 'recent') a.sort((x, y) => (y.lastRead || 0) - (x.lastRead || 0));
+  else if (sortMode === 'progress') a.sort((x, y) => (y.progress || 0) - (x.progress || 0));
+  return a;
+}
+const renumber = () => books.forEach((b, i) => b.order = i);
+function move(id, d) { // 책을 위/아래로 한 칸 이동
+  const i = books.findIndex(b => b.id === id), j = i + d;
+  if (i < 0 || j < 0 || j >= books.length) return;
+  renumber(); [books[i], books[j]] = [books[j], books[i]]; renumber();
+  save(); cloudSave(books[i], false); cloudSave(books[j], false);
+  renderHome();
+}
+$('sort').onchange = e => { sortMode = e.target.value; store.set('mybook:sort', sortMode); renderHome(); };
 
 // ---------- 책 추가 ----------
 const setStatus = t => $('status').textContent = t;
@@ -189,7 +216,7 @@ function addBook({ title, author, content, cover }) {
   if (!save()) {
     books.shift(); setStatus('저장 공간이 부족해요. 더 작은 책을 시도해 주세요.'); return;
   }
-  cloudSave(books[0], true);
+  renumber(); cloudSave(books[0], true);
   setStatus(''); renderHome(); show('home');
 }
 
@@ -332,7 +359,7 @@ function turn(d){        // 페이지 넘기기
 }
 function openBook(id){
   cur = books.find(b => b.id === id); if(!cur) return;
-  ratio = cur.progress || 0;
+  ratio = cur.progress || 0; cur.lastRead = Date.now();
   $('bTitle').textContent = cur.title; paras = cur.content.split('\n\n'); renderBody(); editMode = false; $('body').classList.remove('editing'); $('editMode').classList.remove('on');
   $('body').style.fontSize = fontSize + 'px';
   applyMode(); sc.scrollLeft = 0; sc.scrollTop = 0;
@@ -342,7 +369,7 @@ function openBook(id){
 let cloudT = null;
 function persist(now){
   if (!cur) return;
-  cur.progress = ratio; store.set('mybook:books', books);
+  cur.progress = ratio; cur.lastRead = Date.now(); store.set('mybook:books', books);
   clearTimeout(cloudT);
   if (now) cloudSave(cur, false); else cloudT = setTimeout(() => cloudSave(cur, false), 2500);
 }
@@ -440,7 +467,7 @@ async function cloudSaveNow(b, withContent) {
       chunkCache[b.id] = chunks;
     }
     await cloud.doc('b_' + b.id).set({ kind: 'book', id: b.id, title: b.title, author: b.author, cover: b.cover || '',
-      progress: b.progress || 0, color: b.color, n: chunks.length });
+      progress: b.progress || 0, color: b.color, n: chunks.length, order: b.order ?? 0, lastRead: b.lastRead || 0 });
     setSync('☁︎ 계정에 저장됨');
   } catch (e) { setSync('⚠︎ 계정 저장 실패 (이 브라우저에는 저장됨)'); }
 }
@@ -457,10 +484,10 @@ async function initCloud() {
       const parts = chunks[m.id] || [];
       if (parts.length < m.n || parts.some(p => p == null) || (cur && cur.id === m.id)) return;
       chunkCache[m.id] = parts;
-      const book = { id: m.id, title: m.title, author: m.author, cover: m.cover, progress: m.progress, color: m.color, content: parts.join('') };
+      const book = { id: m.id, title: m.title, author: m.author, cover: m.cover, progress: m.progress, color: m.color, order: m.order, lastRead: m.lastRead, content: parts.join('') };
       const i = books.findIndex(b => b.id === m.id); if (i >= 0) books[i] = book; else books.push(book);
     });
-    books.sort((a, b) => b.id - a.id); store.set('mybook:books', books); renderHome();
+    books.sort((a, b) => (a.order ?? 1e9) - (b.order ?? 1e9) || b.id - a.id); store.set('mybook:books', books); renderHome();
     for (const b of books) if (!metas[b.id]) await cloudSave(b, true); // 이 기기에만 있던 책은 계정으로 올리기
     setSync('☁︎ 계정에 저장됨');
   } catch (e) { setSync('이 기기에만 저장 중 · 내보내기로 백업하세요'); }
@@ -510,7 +537,7 @@ if (document.fullscreenEnabled || document.webkitFullscreenEnabled) {
              : (de.requestFullscreen || de.webkitRequestFullscreen).call(de); } catch (e) {}
   };
 }
-applyTheme(); applyMode(); renderHome(); initCloud();
+applyTheme(); applyMode(); $('sort').value = sortMode; renderHome(); initCloud();
 navigator.storage?.persist?.();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
