@@ -303,11 +303,7 @@ async function parseEpub(file) {
     let c = Object.values(items).find(i => (i.getAttribute('properties') || '').includes('cover-image'));
     if (!c) { const m = tagsOf(opf, 'meta').find(m => m.getAttribute('name') === 'cover'); c = m && items[m.getAttribute('content')]; }
     const blob = await zip.file(resolve(c.getAttribute('href'))).async('blob');
-    const img = await createImageBitmap(new Blob([blob], { type: c.getAttribute('media-type') }));
-    const cv = document.createElement('canvas'); cv.width = 160; cv.height = 230;
-    const k = Math.max(160 / img.width, 230 / img.height);
-    cv.getContext('2d').drawImage(img, (160 - img.width * k) / 2, (230 - img.height * k) / 2, img.width * k, img.height * k);
-    cover = cv.toDataURL('image/jpeg', 0.7);
+    cover = await makeCover(new Blob([blob], { type: c.getAttribute('media-type') }));
   } catch (e) { /* 표지가 없으면 색상 표지 사용 */ }
 
   return { title: meta('title') || file.name.replace(/\.epub$/i, ''), author: meta('creator'), content: parts.join('\n\n'), cover };
@@ -345,12 +341,41 @@ function openEdit(id) {
   paintPreview(); show('edit');
 }
 // 사진을 표지 크기(160x230)로 잘라 줄여서 저장 용량을 아낌
+const COVW = 240, COVH = 344; // 표지 크기
+// 검은 화면 판별: 샘플 픽셀이 전부 거의 검정이면 변환 실패로 봐요
+const isBlack = c => { const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+  for (let i = 0; i < d.length; i += 40) if (d[i] + d[i + 1] + d[i + 2] > 30) return false; return true; };
+const whiteCanvas = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, w, h); return c; }; // 투명한 부분이 검게 변하지 않도록 흰 배경
+const loadImg = url => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('img')); i.src = url; });
+// 큰 사진을 단계적으로 줄인 뒤 표지 비율로 가운데를 잘라요 (한 번에 확 줄이면 iOS에서 검게 나올 수 있음)
+function shrink(src, sw, sh) {
+  const m = Math.max(sw, sh);
+  if (m > 2400) { const k = 2400 / m, c = whiteCanvas(Math.round(sw * k), Math.round(sh * k));
+    c.getContext('2d').drawImage(src, 0, 0, c.width, c.height); src = c; sw = c.width; sh = c.height; }
+  while (sw / 2 >= COVW * 1.5 && sh / 2 >= COVH * 1.5) {
+    const c = whiteCanvas(Math.floor(sw / 2), Math.floor(sh / 2));
+    c.getContext('2d').drawImage(src, 0, 0, c.width, c.height); src = c; sw = c.width; sh = c.height;
+  }
+  const out = whiteCanvas(COVW, COVH), k = Math.max(COVW / sw, COVH / sh);
+  out.getContext('2d').drawImage(src, (COVW - sw * k) / 2, (COVH - sh * k) / 2, sw * k, sh * k);
+  return out;
+}
 async function makeCover(blob) {
-  const img = await createImageBitmap(blob);
-  const cv = document.createElement('canvas'); cv.width = 160; cv.height = 230;
-  const k = Math.max(160 / img.width, 230 / img.height);
-  cv.getContext('2d').drawImage(img, (160 - img.width * k) / 2, (230 - img.height * k) / 2, img.width * k, img.height * k);
-  return cv.toDataURL('image/jpeg', 0.75);
+  const url = URL.createObjectURL(blob);
+  const tries = [ // 안 되면 다음 방법으로 차례로 시도
+    async () => { const i = await loadImg(url); return shrink(i, i.naturalWidth, i.naturalHeight); },
+    async () => { const b = await createImageBitmap(blob); return shrink(b, b.width, b.height); },
+    async () => { const b = await createImageBitmap(blob, { resizeWidth: 1200, resizeQuality: 'high' }); return shrink(b, b.width, b.height); },
+  ];
+  let first = null;
+  try {
+    for (const t of tries) {
+      try { const c = await t(); first = first || c; if (!isBlack(c)) return c.toDataURL('image/jpeg', 0.8); } catch (e) {}
+    }
+  } finally { URL.revokeObjectURL(url); }
+  if (first) return first.toDataURL('image/jpeg', 0.8); // 정말 검은 사진이면 그대로
+  throw new Error('이미지를 읽을 수 없어요');
 }
 $('eFile').onchange = async e => {
   const f = e.target.files[0]; if (!f) return;
