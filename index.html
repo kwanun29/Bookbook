@@ -63,6 +63,7 @@ textarea{height:220px;resize:none}
 .pk input{width:22px;height:22px;margin:auto 0 auto 8px;flex:none}
 .shbtns{padding:0 20px 16px;display:flex;flex-direction:column;gap:10px}
 .shbtns .btn{margin:0}
+#tMode{width:100%;font:inherit;font-size:16px;color:var(--text);background:var(--card);border:0;border-radius:14px;padding:14px;margin-bottom:12px}
 .back{font-size:16px;padding:6px 0}
 /* 읽기 화면 */
 .scroll{flex:1;min-height:0;overflow-y:auto;padding:28px 24px 64px}
@@ -122,6 +123,11 @@ textarea{height:220px;resize:none}
 <section id="add" class="view">
   <header><button class="back" id="addBack">‹ 뒤로</button><b>책 추가</b><span style="width:48px"></span></header>
   <div class="form">
+    <select id="tMode" aria-label="제목 정하기">
+      <option value="auto">제목: 자동 (파일 정보, 없으면 본문 첫 줄)</option>
+      <option value="l1">제목: 본문 첫 줄</option>
+      <option value="l2">제목: 본문 첫 두 줄</option>
+    </select>
     <label class="btn main" for="file" style="display:block;text-align:center;cursor:pointer">EPUB 파일 선택</label>
     <input type="file" id="file" accept=".epub,application/epub+zip" hidden>
     <p class="status" id="status"></p>
@@ -140,6 +146,7 @@ textarea{height:220px;resize:none}
     </div>
     <input type="file" id="eFile" accept="image/*" hidden>
     <input id="eTitle" placeholder="제목">
+    <div class="row" style="margin-bottom:12px"><button class="btn sub" id="eT1" style="margin:0;font-size:13px">첫 줄을 제목으로</button><button class="btn sub" id="eT2" style="margin:0;font-size:13px">첫 두 줄을 제목으로</button></div>
     <input id="eAuthor" placeholder="저자">
     <div class="row" style="margin-bottom:8px">
       <button class="btn sub" id="eEpub" style="margin:0">EPUB로 내보내기</button>
@@ -227,7 +234,7 @@ $('addBtn').onclick = () => { setStatus(''); show('add'); };
 let sortMode = store.get('mybook:sort', 'manual'); // manual(직접) | recent | title | progress
 function view() { // 화면에 보여줄 순서 (직접 정렬이면 저장된 순서 그대로)
   const a = [...books];
-  if (sortMode === 'title') a.sort((x, y) => x.title.localeCompare(y.title, 'ko'));
+  if (sortMode === 'title') a.sort(natural); // 숫자는 크기순 (1, 2, ... 9, 10)
   else if (sortMode === 'recent') a.sort((x, y) => (y.lastRead || 0) - (x.lastRead || 0));
   else if (sortMode === 'progress') a.sort((x, y) => (y.progress || 0) - (x.progress || 0));
   return a;
@@ -311,10 +318,20 @@ async function parseEpub(file) {
   return { title: meta('title') || file.name.replace(/\.epub$/i, ''), author: meta('creator'), content: parts.join('\n\n'), cover };
 }
 
+// ---- 제목 정하기: 본문의 첫 줄(또는 첫 두 줄)을 제목으로 ----
+const firstLines = (text, n) => text.split(/\n+/).map(t => t.trim()).filter(Boolean).slice(0, n).join(' ').slice(0, 80);
+$('tMode').value = store.get('mybook:tmode', 'auto');
+$('tMode').onchange = e => store.set('mybook:tmode', e.target.value);
+function pickTitle(r, fileName) {
+  const mode = $('tMode').value, base = fileName.replace(/\.epub$/i, '');
+  const junk = !r.title || r.title === base || /^(index|untitled|unknown|title|book|\d+)$/i.test(r.title.trim()); // "index" 같은 의미 없는 제목
+  const n = mode === 'l2' ? 2 : 1;
+  return (mode !== 'auto' || junk ? firstLines(r.content, n) : '') || r.title;
+}
 $('file').onchange = async e => {
   const f = e.target.files[0]; if (!f) return;
   setStatus('불러오는 중…');
-  try { addBook(await parseEpub(f)); }
+  try { const r = await parseEpub(f); r.title = pickTitle(r, f.name); addBook(r); }
   catch (err) { setStatus('EPUB을 읽을 수 없어요: ' + err.message); }
   e.target.value = ''; // 같은 파일을 다시 선택할 수 있게 초기화
 };
@@ -355,6 +372,8 @@ $('eFile').onchange = async e => {
 $('eClear').onclick = () => { newCover = ''; paintPreview(); };
 $('eTitle').oninput = paintPreview; // 표지 글자(첫 글자) 미리보기 갱신
 $('eBack').onclick = () => show('home');
+$('eT1').onclick = () => { $('eTitle').value = firstLines(editing().content, 1) || $('eTitle').value; paintPreview(); };
+$('eT2').onclick = () => { $('eTitle').value = firstLines(editing().content, 2) || $('eTitle').value; paintPreview(); };
 $('eSave').onclick = () => {
   const title = $('eTitle').value.trim();
   if (!title) { $('eStatus').textContent = '제목을 입력해 주세요.'; return; }
