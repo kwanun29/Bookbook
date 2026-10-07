@@ -136,6 +136,9 @@ body.rd{background:var(--rbg,var(--bg))}
 #reader .rhead button,#reader .toolbar button,#reader .toolbar span{color:var(--rfg,var(--text))}
 /* 페이지 넘김 모드: 본문을 가로 단(page)으로 나눠 한 장씩 보여줘요 */
 .scroll.page{overflow:hidden;padding:0;touch-action:none;overscroll-behavior:none}
+#padEnd{display:none}
+.scroll.page #wrap{position:relative}
+.scroll.page #padEnd{display:block;position:absolute;top:0;left:0;width:1px;height:1px;pointer-events:none}
 .scroll.page #wrap{height:100%;padding:var(--pt,28px) var(--px,24px) var(--pb,48px);column-count:1;column-gap:calc(var(--px,24px)*2);column-fill:auto}
 .hbtns{display:flex;align-items:center;gap:10px}
 .gear{font-size:24px;padding:4px 6px;color:var(--sub)}
@@ -264,7 +267,7 @@ h3{margin:20px 0 8px;font-size:17px}
 <!-- 읽기 화면 -->
 <section id="reader" class="view">
   <header class="rhead"><button class="back" id="rBack">‹ 서재</button><button class="back" id="fs" hidden>⛶ 전체화면</button><button class="back" id="bmBtn">☆ 북마크</button></header>
-  <div class="scroll" id="scroll"><div id="wrap"><h2 id="bTitle"></h2><div id="body"></div></div></div>
+  <div class="scroll" id="scroll"><div id="wrap"><h2 id="bTitle"></h2><div id="body"></div><i id="padEnd"></i></div></div>
   <div id="dim"></div>
   <button id="nextBar" hidden></button>
   <div class="toolbar">
@@ -674,12 +677,19 @@ function buildSet() {
 let mode = store.get('mybook:mode', 'scroll');   // 'scroll'(위아래) | 'page'(페이지 넘김)
 let lock = false, lockT = null, uiT = null;
 const hold = (ms = 200) => { lock = true; clearTimeout(lockT); lockT = setTimeout(() => lock = false, ms); }; // 코드로 위치를 옮기는 동안 스크롤 이벤트를 무시
-const pageInfo = () => { const w = sc.clientWidth; return { w, pages: Math.max(1, Math.round(sc.scrollWidth / w)) }; };
+const pageInfo = () => { // 마지막 쪽이 끝까지 딱 맞도록, 쪽 수만큼의 너비를 채우는 받침을 둬요
+  const w = sc.clientWidth, pe = $('padEnd'); if (mode !== 'page' || !pe) return { w, pages: Math.max(1, Math.round(sc.scrollWidth / w)) };
+  pe.style.left = '0px'; const px = parseFloat(getComputedStyle($('wrap')).paddingLeft) || 0;
+  const pages = Math.max(1, Math.round((sc.scrollWidth + px) / w)); pe.style.left = (pages * w - 1) + 'px';
+  return { w, pages }; };
 function showPct() {
   const p = Math.round(ratio * 100);
   if (mode === 'page') { const { w, pages } = pageInfo(); $('pgLbl').textContent = (Math.round(sc.scrollLeft / w) + 1) + ' / ' + pages; }
   else $('pgLbl').textContent = p + '%';
-  $('nextBar').hidden = !(nextInfo && ratio >= 0.97);
+  let atEnd = false;
+  if (mode === 'page') { const { w, pages } = pageInfo(); atEnd = Math.round(sc.scrollLeft / w) >= pages - 1; }
+  else atEnd = sc.scrollHeight - sc.clientHeight - sc.scrollTop <= 24;
+  $('nextBar').hidden = !(nextInfo && atEnd);
   if (!seeking) $('seek').value = Math.round(ratio * 1000);
 }
 function syncRatio() { // 지금 스크롤 위치에서 진행률 계산
