@@ -248,6 +248,10 @@ h3{margin:20px 0 8px;font-size:17px}
 <section id="more" class="view">
   <header><button class="back" id="moreBack">‹ 서재</button><b>더보기</b><span style="width:48px"></span></header>
   <div class="form">
+    <h3>숨긴 책</h3>
+    <p class="note" id="hdNote"></p>
+    <div class="row"><button class="btn sub" id="hdToggle" style="margin:0"></button><button class="btn sub" id="hdPin" style="margin:0"></button></div>
+    <p class="note">책 수정 화면의 "서재에서 숨기기"나 서재의 "선택 → 숨김"으로 숨겨요. 숨긴 책은 서재·책장·검색·다음 책 안내에 나타나지 않고, 앱을 닫거나 다른 앱으로 나가면 자동으로 다시 숨겨져요. 비밀번호는 남이 슬쩍 보는 걸 막는 용도이고, 백업 파일에는 숨긴 책도 그대로 들어 있어요.</p>
     <h3>모양</h3>
     <div class="opt"><b>강조 색</b></div><div class="chips" id="uiAcc"></div>
     <div class="opt"><b>서재 표지 크기</b><span class="note">큰 표지 보기에서 한 화면에 보이는 책 수</span></div><div class="chips" id="uiSize"></div>
@@ -286,6 +290,7 @@ h3{margin:20px 0 8px;font-size:17px}
     <div class="row" style="margin-bottom:12px"><button class="btn sub" id="eT1" style="margin:0;font-size:13px">첫 줄을 제목으로</button><button class="btn sub" id="eT2" style="margin:0;font-size:13px">첫 두 줄을 제목으로</button></div>
     <input id="eAuthor" placeholder="저자">
     <input id="eTags" placeholder="태그 (쉼표로 구분, 예: 판타지, 시리즈)">
+    <label class="chk" style="margin:0 0 12px"><input type="checkbox" id="eHide"> 서재에서 숨기기 (설정 ⚙︎ → 숨긴 책 보기에서만 보여요)</label>
     <div class="row" style="margin-bottom:8px">
       <button class="btn sub" id="eEpub" style="margin:0">EPUB로 내보내기</button>
       <button class="btn sub" id="eTxt" style="margin:0">TXT로 내보내기</button>
@@ -358,7 +363,7 @@ h3{margin:20px 0 8px;font-size:17px}
 </div></div>
 
 <!-- 서재 선택 모드 바 / 텍스트 선택 시 형광펜 바 -->
-<div id="selBar2"><span id="selCnt"></span><button id="sbMerge">병합</button><button id="sbTag">태그</button><button id="sbDel" style="color:#d33">삭제</button><button id="sbX">취소</button></div>
+<div id="selBar2"><span id="selCnt"></span><button id="sbMerge">병합</button><button id="sbTag">태그</button><button id="sbHide">숨김</button><button id="sbDel" style="color:#d33">삭제</button><button id="sbX">취소</button></div>
 <div id="selBar"><button data-c="0" style="background:#ffe066" aria-label="노랑"></button><button data-c="1" style="background:#8ce69a" aria-label="초록"></button><button data-c="2" style="background:#82beff" aria-label="파랑"></button><button data-c="3" style="background:#ff96aa" aria-label="분홍"></button><button id="sbMemo">📝 메모</button></div>
 
 <!-- 문단 편집 시트 -->
@@ -405,6 +410,34 @@ function applyTheme(){
 try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (!theme) applyTheme(); }); } catch (e) {}
 $('theme').onclick = () => { theme = theme === null ? 'light' : theme === 'light' ? 'dark' : null; store.set('mybook:theme2', theme); applyTheme(); };
 
+// ---------- 숨긴 책 ----------
+const pinHash = s => { let h = 5381; const x = 'mybook|' + s; for (let i = 0; i < x.length; i++) h = ((h << 5) + h + x.charCodeAt(i)) | 0; return String(h); };
+function renderHidden() {
+  const n = books.filter(b => b.hidden).length, pin = store.get('mybook:pin', null);
+  $('hdNote').textContent = `숨긴 책 ${n}권 · ${hiddenOn ? '지금 보이는 중' : '숨겨진 상태'}`;
+  $('hdToggle').textContent = hiddenOn ? '다시 숨기기' : '숨긴 책 보기'; $('hdPin').textContent = pin ? '비밀번호 변경·해제' : '비밀번호 설정';
+}
+const askPin = async msg => { const pin = store.get('mybook:pin', null); if (!pin) return true;
+  const v = await dialog(msg, { input: true, secret: true, ok: '확인' }); if (v === null) return false;
+  if (pinHash(v) === pin) return true; await dialog('비밀번호가 달라요.', { ok: '확인' }); return false; };
+function relock() { hiddenOn = false; renderHome(); renderShelves(); renderHidden(); }
+$('hdToggle').onclick = async () => {
+  if (hiddenOn) { relock(); return; }
+  if (!(await askPin('비밀번호를 입력하세요'))) return; hiddenOn = true; renderHome(); renderShelves(); renderHidden();
+};
+$('hdPin').onclick = async () => {
+  if (!(await askPin('현재 비밀번호'))) return;
+  const v = await dialog('새 비밀번호 (숫자 4자리 이상)\n비워 두고 확인하면 비밀번호를 해제해요', { input: true, secret: true, ok: '저장' }); if (v === null) return;
+  if (!v) { store.set('mybook:pin', null); renderHidden(); return; }
+  if (!/^\d{4,}$/.test(v)) { await dialog('숫자 4자리 이상으로 입력해 주세요.', { ok: '확인' }); return; }
+  store.set('mybook:pin', pinHash(v)); renderHidden();
+};
+document.addEventListener('visibilitychange', () => { if (!document.hidden) return;
+  if (!hiddenOn && !(cur && cur.hidden)) return;
+  hiddenOn = false;
+  if ($('reader').classList.contains('active') && cur && cur.hidden) $('rBack').click(); else { renderHome(); renderShelves(); }
+  renderHidden(); });
+
 // ---------- 모양 설정: 강조 색 · 표지 크기 · 목록 밀도 ----------
 const UI_DEF = { acc: 'default', size: 'big', dens: 'normal' };
 let ui = { ...UI_DEF, ...(store.get('mybook:ui', null) || {}) };
@@ -424,8 +457,9 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-uk]'
 let viewMode = store.get('mybook:view', 'cover'); // 'cover'(큰 표지) | 'list'(목록)
 let focusId = null; // 방금 만진 책: 화면을 다시 그린 뒤에도 그 책이 보이게
 // 읽고 있는 책 = 읽기 시작했고 아직 끝까지 읽지 않은 책
+let hiddenOn = false; const vis = b => !b.hidden || hiddenOn;   // 숨긴 책은 '숨긴 책 보기'를 켠 동안만 보여요
 function shown() {
-  let v = view();
+  let v = view().filter(vis);
   if (homeTab === 'reading') v = v.filter(b => (b.progress || 0) > 0 && (b.progress || 0) < 0.99);
   if (libTag) v = v.filter(b => (b.tags || []).includes(libTag));
   if (libQ) v = v.filter(b => (b.title + ' ' + b.author + ' ' + (b.tags || []).join(' ')).toLowerCase().includes(libQ));
@@ -609,7 +643,7 @@ function paintPreview() {
 function openEdit(id) {
   editId = id; newCover = undefined;
   const b = editing();
-  $('eTitle').value = b.title; $('eAuthor').value = b.author; $('eTags').value = (b.tags || []).join(', '); $('eStatus').textContent = '';
+  $('eTitle').value = b.title; $('eAuthor').value = b.author; $('eTags').value = (b.tags || []).join(', '); $('eHide').checked = !!b.hidden; $('eStatus').textContent = '';
   paintPreview(); show('edit');
 }
 // 사진을 표지 크기(160x230)로 잘라 줄여서 저장 용량을 아낌
@@ -669,7 +703,7 @@ $('eSave').onclick = async () => {
   const title = $('eTitle').value.trim();
   if (!title) { $('eStatus').textContent = '제목을 입력해 주세요.'; return; }
   const b = editing(), old = { ...b };
-  b.title = title; b.author = $('eAuthor').value.trim() || '작자 미상'; b.tags = parseTags($('eTags').value); b.xd = true;
+  b.title = title; b.author = $('eAuthor').value.trim() || '작자 미상'; b.tags = parseTags($('eTags').value); b.hidden = $('eHide').checked; b.xd = true;
   if (newCover !== undefined) b.cover = newCover;
   if (!(await saveMeta(b)) && !cloud) { Object.assign(b, old); $('eStatus').textContent = '저장 공간이 부족해요.'; return; }
   cloudSave(b, false);
@@ -1022,7 +1056,7 @@ $('hlList').onclick = e => { const it = e.target.closest('.bmi'); if (!it) retur
 function findNext() {
   const sh = backTo === 'shelf' ? shelfById(curShelf) : shelves.find(x => x.bookIds.includes(cur.id));
   if (!sh) return null;
-  for (let j = sh.bookIds.indexOf(cur.id) + 1; j < sh.bookIds.length; j++) { const nb = bookById(sh.bookIds[j]); if (nb) return { book: nb, shelf: sh }; }
+  for (let j = sh.bookIds.indexOf(cur.id) + 1; j < sh.bookIds.length; j++) { const nb = bookById(sh.bookIds[j]); if (nb && vis(nb)) return { book: nb, shelf: sh }; }
   return null;
 }
 $('nextBar').onclick = () => { if (!nextInfo) return; persist(true); curShelf = nextInfo.shelf.id; openBook(nextInfo.book.id, 'shelf'); };
@@ -1121,7 +1155,7 @@ const put = (name, key, val) => new Promise((res, rej) => {
 const safe = pr => pr.then(() => true, () => false); // 실패(저장 공간 부족 등)하면 false
 const metaOf = b => ({ id: b.id, title: b.title, author: b.author, cover: b.cover || '', color: b.color,
                        order: b.order ?? 0, progress: b.progress || 0, lastRead: b.lastRead || 0,
-                       pos: b.pos ?? null, bookmarks: b.bookmarks || [], hl: b.hl || [], tags: b.tags || [] });
+                       pos: b.pos ?? null, bookmarks: b.bookmarks || [], hl: b.hl || [], tags: b.tags || [], hidden: !!b.hidden });
 const saveMeta = b => idb ? safe(put('meta', b.id, metaOf(b))) : Promise.resolve(store.set('mybook:books', books));
 const saveContent = b => idb ? safe(put('content', b.id, b.content)) : Promise.resolve(store.set('mybook:books', books));
 const saveBook = async b => idb ? (await saveContent(b)) && (await saveMeta(b)) : store.set('mybook:books', books);
@@ -1161,7 +1195,7 @@ async function cloudSaveNow(b, withContent) {
     }
     await cloud.doc('b_' + b.id).set({ kind: 'book', id: b.id, title: b.title, author: b.author, cover: b.cover || '',
       progress: b.progress || 0, color: b.color, n: chunks.length, order: b.order ?? 0, lastRead: b.lastRead || 0, pos: b.pos ?? null, bookmarks: b.bookmarks || [] });
-    if (b.xd || withContent) { await cloud.doc('x_' + b.id).set({ kind: 'extra', bookId: b.id, hl: b.hl || [], tags: b.tags || [] }); b.xd = false; }
+    if (b.xd || withContent) { await cloud.doc('x_' + b.id).set({ kind: 'extra', bookId: b.id, hl: b.hl || [], tags: b.tags || [], hidden: !!b.hidden }); b.xd = false; }
     setSync('☁︎ 계정에 저장됨');
   } catch (e) { setSync('⚠︎ 계정 저장 실패 (이 브라우저에는 저장됨)'); }
 }
@@ -1178,7 +1212,7 @@ async function initCloud() {
       const parts = chunks[m.id] || [];
       if (parts.length < m.n || parts.some(p => p == null) || (cur && cur.id === m.id)) return;
       chunkCache[m.id] = parts;
-      const book = { id: m.id, title: m.title, author: m.author, cover: m.cover, progress: m.progress, color: m.color, order: m.order, lastRead: m.lastRead, pos: m.pos, bookmarks: m.bookmarks || [], hl: extras[m.id] ? extras[m.id].hl || [] : (books.find(b => b.id === m.id)?.hl || []), tags: extras[m.id] ? extras[m.id].tags || [] : (books.find(b => b.id === m.id)?.tags || []), content: parts.join('') };
+      const book = { id: m.id, title: m.title, author: m.author, cover: m.cover, progress: m.progress, color: m.color, order: m.order, lastRead: m.lastRead, pos: m.pos, bookmarks: m.bookmarks || [], hl: extras[m.id] ? extras[m.id].hl || [] : (books.find(b => b.id === m.id)?.hl || []), tags: extras[m.id] ? extras[m.id].tags || [] : (books.find(b => b.id === m.id)?.tags || []), hidden: extras[m.id] ? !!extras[m.id].hidden : !!(books.find(b => b.id === m.id)?.hidden), content: parts.join('') };
       const i = books.findIndex(b => b.id === m.id), same = i >= 0 && books[i].content === book.content;
       if (i >= 0) books[i] = book; else books.push(book); restored.push([book, !same]);
     });
@@ -1242,10 +1276,10 @@ const coverStyle = b => `background-color:${b.color};${b.cover ? `background-ima
 const natural = (a, b) => a.title.localeCompare(b.title, 'ko', { numeric: true }); // 1권, 2권, 10권 순서로
 
 // 입력/확인 창 (브라우저 기본 prompt 대신 앱 안에서 띄움)
-function dialog(title, { input = false, value = '', ok = '확인' } = {}) {
+function dialog(title, { input = false, value = '', ok = '확인', secret = false } = {}) {
   return new Promise(res => {
     const inp = $('dInput');
-    $('dTitle').textContent = title; inp.style.display = input ? '' : 'none'; inp.value = value; $('dYes').textContent = ok;
+    $('dTitle').textContent = title; inp.style.display = input ? '' : 'none'; inp.value = value; inp.type = secret ? 'password' : 'text'; inp.inputMode = secret ? 'numeric' : ''; $('dYes').textContent = ok;
     $('dlg').classList.add('open'); if (input) inp.focus();
     const done = v => { $('dlg').classList.remove('open'); $('dYes').onclick = $('dNo').onclick = null; res(v); };
     $('dYes').onclick = () => done(input ? inp.value.trim() : true);
@@ -1256,7 +1290,7 @@ function dialog(title, { input = false, value = '', ok = '확인' } = {}) {
 // 책장 목록 (표지 미리보기 + 권수)
 function renderShelves() {
   $('shelfList').innerHTML = shelves.length ? shelves.map(sh => {
-    const bs = sh.bookIds.map(bookById).filter(Boolean);
+    const bs = sh.bookIds.map(bookById).filter(b => b && vis(b));
     const minis = bs.slice(0, 4).map(b => `<span class="mini" style="${coverStyle(b)}">${b.cover ? '' : esc(b.title.charAt(0))}</span>`).join('') || '<span class="mini none"></span>';
     return `<div class="card shelfcard" data-id="${sh.id}" role="button" tabindex="0"><div class="minis">${minis}</div>
       <div class="info"><div class="t">${esc(sh.name)}</div><div class="a">${bs.length}권</div></div></div>`;
@@ -1273,7 +1307,7 @@ $('newShelf').onclick = async () => {
 function renderShelf() {
   const sh = shelfById(curShelf); if (!sh) return;
   $('shName').textContent = sh.name;
-  const bs = sh.bookIds.map(bookById).filter(Boolean);
+  const bs = sh.bookIds.map(bookById).filter(b => b && vis(b));
   $('shBooks').innerHTML = bs.length ? bs.map((b, i) => {
     const p = Math.round((b.progress || 0) * 100);
     return `<div class="card" data-id="${b.id}" role="button" tabindex="0">
@@ -1303,7 +1337,7 @@ $('shDel').onclick = async () => { const sh = shelfById(curShelf);
 // 책 고르기: 서재의 책을 체크해서 책장에 담기
 $('shAdd').onclick = () => {
   pickSet = new Set(shelfById(curShelf).bookIds);
-  $('pkList').innerHTML = books.length ? books.map(b => `<label class="card pk"><div class="cover" style="${coverStyle(b)}">${b.cover ? '' : esc(b.title.charAt(0))}</div>
+  $('pkList').innerHTML = books.filter(vis).length ? books.filter(vis).map(b => `<label class="card pk"><div class="cover" style="${coverStyle(b)}">${b.cover ? '' : esc(b.title.charAt(0))}</div>
     <div class="info"><div class="t">${esc(b.title)}</div><div class="a">${esc(b.author)}</div></div>
     <input type="checkbox" data-id="${b.id}" ${pickSet.has(b.id) ? 'checked' : ''}></label>`).join('')
     : '<div class="empty">서재에 책이 없어요.</div>';
@@ -1339,6 +1373,13 @@ function exitSelect() { selectMode = false; selSet.clear(); updateSelBar(); }
 $('selBtn').onclick = () => { if (selectMode) exitSelect(); else { selectMode = true; selSet.clear(); updateSelBar(); } renderHome(); };
 $('sbX').onclick = () => { exitSelect(); renderHome(); };
 const selBooks = () => [...selSet].map(bookById).filter(Boolean);
+
+// 책 숨기기 / 숨김 해제 (선택한 책 전체)
+$('sbHide').onclick = async () => {
+  const bs = selBooks(); if (!bs.length) return; const to = !bs.every(b => b.hidden);
+  for (const b of bs) { b.hidden = to; b.xd = true; await saveMeta(b); cloudSave(b, false); }
+  exitSelect(); renderHome(); renderShelves(); renderHidden();
+};
 
 // 책 삭제 (기기 + 계정 + 책장에서 모두)
 const del = (name, key) => new Promise((res, rej) => { const t = idb.transaction(name, 'readwrite'); t.objectStore(name).delete(key); t.oncomplete = () => res(true); t.onerror = t.onabort = () => rej(t.error); });
@@ -1448,7 +1489,7 @@ function renderStats() {
   $('statBox').innerHTML = `<div class="tiles"><div><b>${fmtT(today)}</b><span>오늘 읽은 시간</span></div><div><b>${streak}일</b><span>연속 독서</span></div><div><b>${done}권</b><span>완독한 책</span></div><div><b>${fmtT(total)}</b><span>총 읽은 시간</span></div></div>
     <div class="bars">${days7.map(x => `<div class="bc"><em>${Math.round(x.v / 60)}분</em><i style="height:${Math.max(3, x.v / mx * 90)}px"></i><u>${x.w}</u></div>`).join('')}</div>`;
 }
-document.querySelectorAll('.gear').forEach(g => g.onclick = () => { renderStats(); $('bkStatus').textContent = ''; show('more'); });
+document.querySelectorAll('.gear').forEach(g => g.onclick = () => { renderStats(); renderHidden(); $('bkStatus').textContent = ''; show('more'); });
 $('moreBack').onclick = () => show('home');
 
 // ---------- 백업 · 복원 ----------
