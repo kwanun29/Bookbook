@@ -18,7 +18,7 @@
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#000;--text:#ededed;--sub:#9a9a9f;--card:#1c1c1e;--border:#2c2c2e;--accent:#ededed;--accent-text:#000}}
 :root[data-theme="dark"]{--bg:#000;--text:#ededed;--sub:#9a9a9f;--card:#1c1c1e;--border:#2c2c2e;--accent:#ededed;--accent-text:#000}
 *{box-sizing:border-box}
-html,body{height:100%;margin:0}
+html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none}
 body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}
 .view{display:none;height:100%;flex-direction:column;max-width:640px;margin:0 auto}
 .view.active{display:flex}
@@ -131,7 +131,7 @@ textarea{height:220px;resize:none}
 #thin{position:absolute;left:0;right:0;bottom:0;height:2px;z-index:4}
 #thin i{display:block;height:100%;width:0;background:var(--sub);opacity:.6}
 /* 페이지 넘김 모드: 본문을 가로 단(page)으로 나눠 한 장씩 보여줘요 */
-.scroll.page{overflow:hidden;padding:0}
+.scroll.page{overflow:hidden;padding:0;touch-action:none;overscroll-behavior:none}
 .scroll.page #wrap{height:100%;padding:var(--pt,28px) var(--px,24px) var(--pb,48px);column-count:1;column-gap:calc(var(--px,24px)*2);column-fill:auto}
 </style>
 </head>
@@ -612,7 +612,7 @@ function gotoAnchor(a) { // 문단 번호 a가 있는 위치로 이동 (없으�
 function updateBm() { if (cur) $('bmBtn').textContent = (cur.bookmarks || []).some(b => b.p === lastAnchor) ? '★ 북마크' : '☆ 북마크'; }
 function afterJump() { syncRatio(); persist(); updateBm(); }
 
-function applyMode() { sc.classList.toggle('page', mode === 'page'); $('modeBtn').textContent = mode === 'page' ? '페이지' : '스크롤'; }
+function applyMode() { sc.classList.toggle('page', mode === 'page'); if (mode === 'page') sc.scrollTop = 0; $('modeBtn').textContent = mode === 'page' ? '페이지' : '스크롤'; }
 function showUI(v, auto) { // 메뉴 보이기/숨기기 (auto: 잠시 뒤 자동으로 숨김)
   clearTimeout(uiT); $('reader').classList.toggle('ui', v);
   if (v && auto) uiT = setTimeout(() => { if (!editMode) $('reader').classList.remove('ui'); }, 2500);
@@ -642,6 +642,7 @@ function persist(now) {
   if (now) cloudSave(cur, false); else cloudT = setTimeout(() => cloudSave(cur, false), 2500);
 }
 sc.addEventListener('scroll', () => {
+  if (mode === 'page' && sc.scrollTop) sc.scrollTop = 0;   // 페이지 모드는 세로로 움직이지 않게 고정
   if (lock || !readerActive()) return;
   syncRatio();
   clearTimeout(saveTimer); saveTimer = setTimeout(() => { persist(); updateBm(); }, 300);  // 스크롤이 멈추면 저장
