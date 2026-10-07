@@ -65,7 +65,7 @@ textarea{height:220px;resize:none}
 .shbtns{padding:0 20px 16px;display:flex;flex-direction:column;gap:10px}
 .shbtns .btn{margin:0}
 /* 서재: 큰 표지를 옆으로 넘겨 보는 화면 */
-.carousel{flex:1;min-height:0;position:relative;display:flex;align-items:flex-start;gap:36%;overflow-x:auto;scroll-snap-type:x mandatory;padding:20px 25% 110px;-webkit-overflow-scrolling:touch}
+.carousel{flex:1;min-height:0;position:relative;display:flex;align-items:flex-start;gap:36%;overflow-x:auto;overflow-y:hidden;touch-action:pan-x;overscroll-behavior:contain;scroll-snap-type:x mandatory;padding:20px 25% 110px;-webkit-overflow-scrolling:touch}
 .slide{flex:0 0 100%;min-width:0;scroll-snap-align:center;cursor:pointer}
 .bigcover{width:100%;aspect-ratio:2/3;border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.25);background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;text-align:center;padding:12px;font-size:20px;line-height:1.3;word-break:keep-all}
 .srow{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-top:14px}
@@ -98,6 +98,9 @@ textarea{height:220px;resize:none}
 .srow2 label{width:72px;font-size:13px;color:var(--sub);flex:none}
 .srow2 .rng{flex:1;min-width:0}
 .srow2 span{width:46px;text-align:right;font-size:13px;flex:none}
+.stp{display:flex;align-items:center;gap:6px;flex:1;justify-content:flex-end}
+.stp button{width:44px;height:36px;border-radius:10px;background:var(--border);color:var(--text);font-size:22px;line-height:1;padding:0;margin:0}
+.stp .sv{width:64px;text-align:center;font-size:15px;font-weight:600}
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 12px}
 .chips button{padding:8px 12px;border-radius:12px;background:var(--card);font-size:14px}
 .chips button.on{outline:2px solid var(--accent)}
@@ -128,8 +131,9 @@ textarea{height:220px;resize:none}
 .rhead{position:absolute;top:0;left:0;right:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--border);opacity:0;transform:translateY(-110%);transition:.2s;pointer-events:none}
 .toolbar{position:absolute;left:16px;right:16px;bottom:10px;z-index:5;opacity:0;transform:translateY(160%);transition:.2s;pointer-events:none}
 #reader.ui .rhead,#reader.ui .toolbar{opacity:1;transform:none;pointer-events:auto}
-#thin{position:absolute;left:0;right:0;bottom:0;height:2px;z-index:4}
-#thin i{display:block;height:100%;width:0;background:var(--sub);opacity:.6}
+body.rd{background:var(--rbg,var(--bg))}
+#reader .rhead{background:var(--rbg,var(--bg));color:var(--rfg,var(--text))}
+#reader .rhead button,#reader .toolbar button,#reader .toolbar span{color:var(--rfg,var(--text))}
 /* 페이지 넘김 모드: 본문을 가로 단(page)으로 나눠 한 장씩 보여줘요 */
 .scroll.page{overflow:hidden;padding:0;touch-action:none;overscroll-behavior:none}
 .scroll.page #wrap{height:100%;padding:var(--pt,28px) var(--px,24px) var(--pb,48px);column-count:1;column-gap:calc(var(--px,24px)*2);column-fill:auto}
@@ -261,7 +265,6 @@ h3{margin:20px 0 8px;font-size:17px}
 <section id="reader" class="view">
   <header class="rhead"><button class="back" id="rBack">‹ 서재</button><button class="back" id="fs" hidden>⛶ 전체화면</button><button class="back" id="bmBtn">☆ 북마크</button></header>
   <div class="scroll" id="scroll"><div id="wrap"><h2 id="bTitle"></h2><div id="body"></div></div></div>
-  <div id="thin"><i></i></div>
   <div id="dim"></div>
   <button id="nextBar" hidden></button>
   <div class="toolbar">
@@ -353,6 +356,7 @@ function show(id){
   else if (id === 'shelves' && homeTab !== 'shelves') id = 'home';
   if (id !== 'home' && selectMode) exitSelect();
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === id));
+  document.body.classList.toggle('rd', id === 'reader');
   document.querySelectorAll('.seg button').forEach(b => b.classList.toggle('on', b.dataset.tab === homeTab));
 }
 
@@ -651,12 +655,14 @@ function applyRS() {
   r.setProperty('--fs', rs.fs + 'px'); r.setProperty('--lh', rs.lh); r.setProperty('--pg', rs.pg + 'em');
   r.setProperty('--px', rs.px + 'px'); r.setProperty('--pt', rs.pt + 'px'); r.setProperty('--pb', rs.pb + 'px');
   r.setProperty('--ta', rs.ta); r.setProperty('--ff', FONTS[rs.ff] || FONTS.sans);
-  if (bg.bg) { r.setProperty('--rbg', bg.bg); r.setProperty('--rfg', bg.fg); } else { r.removeProperty('--rbg'); r.removeProperty('--rfg'); }
+  const de2 = document.documentElement.style;
+  if (bg.bg) { r.setProperty('--rbg', bg.bg); r.setProperty('--rfg', bg.fg); de2.setProperty('--rbg', bg.bg); de2.setProperty('--rfg', bg.fg); } else { r.removeProperty('--rbg'); r.removeProperty('--rfg'); de2.removeProperty('--rbg'); de2.removeProperty('--rfg'); }
   $('dim').style.opacity = String(Math.min(0.7, (100 - rs.br) / 100)); // 밝기: 화면을 어둡게 덮는 방식
 }
 function buildSet() {
   $('setRows').innerHTML = SET_ROWS.map(([k, n, min, max, step]) =>
-    `<div class="srow2"><label>${n}</label><input type="range" class="rng" data-k="${k}" min="${min}" max="${max}" step="${step}" value="${rs[k]}"><span data-v="${k}">${FMT[k](rs[k])}</span></div>`).join('');
+    k === 'br' ? `<div class="srow2"><label>${n}</label><input type="range" class="rng" data-k="${k}" min="${min}" max="${max}" step="${step}" value="${rs[k]}"><span data-v="${k}">${FMT[k](rs[k])}</span></div>`
+      : `<div class="srow2"><label>${n}</label><div class="stp"><button data-st="${k}" data-d="-1" aria-label="${n} 줄이기">−</button><span class="sv" data-v="${k}">${FMT[k](rs[k])}</span><button data-st="${k}" data-d="1" aria-label="${n} 늘리기">+</button></div></div>`).join('');
   $('ffRow').innerHTML = Object.entries(FNAME).map(([k, n]) => `<button data-ff="${k}" style="font-family:${FONTS[k]}">${n}</button>`).join('');
   $('taRow').innerHTML = [['left', '왼쪽'], ['justify', '양쪽'], ['center', '가운데']].map(([k, n]) => `<button data-ta="${k}">${n}</button>`).join('');
   $('bgRow').innerHTML = Object.entries(BGS).map(([k, v]) => `<button class="sw" data-bg="${k}" aria-label="${v.n}" style="background:${v.bg || 'linear-gradient(135deg,#fff 50%,#111 50%)'}"></button>`).join('');
@@ -673,7 +679,6 @@ function showPct() {
   const p = Math.round(ratio * 100);
   if (mode === 'page') { const { w, pages } = pageInfo(); $('pgLbl').textContent = (Math.round(sc.scrollLeft / w) + 1) + ' / ' + pages; }
   else $('pgLbl').textContent = p + '%';
-  $('thin').firstElementChild.style.width = p + '%';
   $('nextBar').hidden = !(nextInfo && ratio >= 0.97);
   if (!seeking) $('seek').value = Math.round(ratio * 1000);
 }
@@ -835,6 +840,10 @@ $('setp').addEventListener('input', e => {
 });
 $('setp').addEventListener('change', e => { if (!e.target.dataset.k) return; setAnchor = null; store.set('mybook:rs', rs); afterJump(); });
 $('setp').addEventListener('click', e => {
+  const st = e.target.closest('[data-st]');
+  if (st) { const k = st.dataset.st, row = SET_ROWS.find(r => r[0] === k), s = row[4], dec = s < 1 ? 1 : 0;
+    const v = Math.min(row[3], Math.max(row[2], +((+rs[k]) + s * (+st.dataset.d)).toFixed(dec)));
+    relayout(() => rs[k] = v); store.set('mybook:rs', rs); $('setp').querySelector(`[data-v="${k}"]`).textContent = FMT[k](rs[k]); return; }
   const b = e.target.closest('[data-ff],[data-ta],[data-bg],#rsReset,#setDone'); if (!b) return;
   if (b.id === 'setDone') { closeSet(); return; }
   relayout(() => { if (b.id === 'rsReset') rs = { ...RS_DEF }; else if (b.dataset.ff) rs.ff = b.dataset.ff; else if (b.dataset.ta) rs.ta = b.dataset.ta; else rs.bg = b.dataset.bg; });
