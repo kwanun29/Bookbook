@@ -679,8 +679,12 @@ let lock = false, lockT = null, uiT = null;
 const hold = (ms = 200) => { lock = true; clearTimeout(lockT); lockT = setTimeout(() => lock = false, ms); }; // 코드로 위치를 옮기는 동안 스크롤 이벤트를 무시
 const pageInfo = () => { // 마지막 쪽이 끝까지 딱 맞도록, 쪽 수만큼의 너비를 채우는 받침을 둬요
   const w = sc.clientWidth, pe = $('padEnd'); if (mode !== 'page' || !pe) return { w, pages: Math.max(1, Math.round(sc.scrollWidth / w)) };
-  pe.style.left = '0px'; const px = parseFloat(getComputedStyle($('wrap')).paddingLeft) || 0;
-  const pages = Math.max(1, Math.round((sc.scrollWidth + px) / w)); pe.style.left = (pages * w - 1) + 'px';
+  let pages = Math.max(1, Math.round(sc.scrollWidth / w));
+  const lp = $('body').lastElementChild; // 실제 마지막 문단이 놓인 쪽을 직접 재서 쪽 수를 확정해요
+  if (lp) { const s0 = sc.getBoundingClientRect().left; let mx = -1;
+    for (const r of lp.getClientRects()) mx = Math.max(mx, r.right - s0 + sc.scrollLeft);
+    if (mx > 0) pages = Math.max(1, Math.floor((mx - 1) / w) + 1); }
+  const nl = (pages * w - 1) + 'px'; if (pe.style.left !== nl) pe.style.left = nl;
   return { w, pages }; };
 function showPct() {
   const p = Math.round(ratio * 100);
