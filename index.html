@@ -2,6 +2,8 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>MyBook</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang&family=Nanum+Gothic&family=Noto+Serif+KR&display=swap">
@@ -376,7 +378,7 @@ const store = {
 };
 let books = [];   // 시작할 때 loadLocal()이 기기 저장소(IndexedDB)에서 채워 넣어요
 let fontSize = store.get('mybook:font', 18);
-let theme = store.get('mybook:theme', null);
+let theme = store.get('mybook:theme2', null);   // null = 기기 설정(다크모드)을 자동으로 따라가요 | 'light' | 'dark'
 const COLORS = ['#3B5BDB','#C2255C','#2F9E44','#E8590C','#7048E8','#0C8599'];
 const $ = id => document.getElementById(id);
 let lastId = 0; const newId = () => { let t = Date.now(); if (t <= lastId) t = lastId + 1; lastId = t; return String(t); }; // 겹치지 않는 번호
@@ -396,10 +398,12 @@ function show(id){
 // ---------- 테마 ----------
 const isDark = () => theme ? theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
 function applyTheme(){
-  if(theme) document.documentElement.dataset.theme = theme;
-  $('theme').textContent = isDark() ? '☀︎' : '☾';
+  if (theme) document.documentElement.dataset.theme = theme; else delete document.documentElement.dataset.theme;
+  $('theme').textContent = theme === 'dark' ? '☾ 다크' : theme === 'light' ? '☀︎ 라이트' : '◐ 자동';
+  $('theme').setAttribute('aria-label', '화면 모드: ' + (theme === 'dark' ? '다크' : theme === 'light' ? '라이트' : '기기 설정 따라가기'));
 }
-$('theme').onclick = () => { theme = isDark() ? 'light' : 'dark'; store.set('mybook:theme', theme); applyTheme(); };
+try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (!theme) applyTheme(); }); } catch (e) {}
+$('theme').onclick = () => { theme = theme === null ? 'light' : theme === 'light' ? 'dark' : null; store.set('mybook:theme2', theme); applyTheme(); };
 
 // ---------- 모양 설정: 강조 색 · 표지 크기 · 목록 밀도 ----------
 const UI_DEF = { acc: 'default', size: 'big', dens: 'normal' };
