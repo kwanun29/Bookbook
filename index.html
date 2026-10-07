@@ -86,8 +86,8 @@ textarea{height:220px;resize:none}
 #body mark{background:#ffe066;color:#111;border-radius:3px}
 #body.editing p{outline:1px dashed var(--sub);outline-offset:1px;border-radius:4px}
 .toolbar button.on{background:var(--border);border-radius:12px}
-#sheet,#dlg,#panel{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);align-items:flex-end;justify-content:center;z-index:10}
-#sheet.open,#dlg.open,#panel.open{display:flex}
+#sheet,#dlg,#panel,#hlSheet,#mergeSheet{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);align-items:flex-end;justify-content:center;z-index:10}
+#sheet.open,#dlg.open,#panel.open,#hlSheet.open,#mergeSheet.open{display:flex}
 #setp{display:none;position:fixed;inset:0;align-items:flex-end;justify-content:center;z-index:9;pointer-events:none}
 #setp.open{display:flex}
 #setp .sheet{pointer-events:auto;max-height:58vh;overflow-y:auto;box-shadow:0 -6px 24px rgba(0,0,0,.25)}
@@ -133,22 +133,66 @@ textarea{height:220px;resize:none}
 /* 페이지 넘김 모드: 본문을 가로 단(page)으로 나눠 한 장씩 보여줘요 */
 .scroll.page{overflow:hidden;padding:0;touch-action:none;overscroll-behavior:none}
 .scroll.page #wrap{height:100%;padding:var(--pt,28px) var(--px,24px) var(--pb,48px);column-count:1;column-gap:calc(var(--px,24px)*2);column-fill:auto}
+.hbtns{display:flex;align-items:center;gap:10px}
+.gear{font-size:24px;padding:4px 6px;color:var(--sub)}
+#libQ{-webkit-appearance:none;margin:0 20px 8px;width:calc(100% - 40px);padding:10px 14px;font-size:15px}
+.tagrow{display:flex;gap:8px;overflow-x:auto;padding:0 20px 8px;-webkit-overflow-scrolling:touch}
+.tagrow button{flex:none;padding:6px 12px;border-radius:14px;background:var(--card);font-size:13px;color:var(--sub)}
+.tagrow button.on{background:var(--accent);color:var(--accent-text)}
+.vt #selBtn{font-size:14px;opacity:1;color:var(--text);font-weight:600;vertical-align:middle}
+.slide{position:relative}
+.ck{position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;border:2px solid #fff;background:rgba(0,0,0,.35);z-index:2}
+.card .ck{top:6px;left:6px;right:auto}
+.picked .ck{background:var(--accent)}
+.picked .ck::after{content:"✓";color:var(--accent-text);display:block;text-align:center;line-height:22px;font-size:15px;font-weight:800}
+.slide.picked .bigcover{outline:4px solid var(--accent);outline-offset:-4px}
+.card.picked{outline:3px solid var(--accent)}
+#selBar2{display:none;position:fixed;left:12px;right:12px;max-width:616px;margin:0 auto;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:7;background:var(--card);border:1px solid var(--border);border-radius:18px;padding:6px 10px;align-items:center;gap:4px;box-shadow:0 6px 20px rgba(0,0,0,.2)}
+#selBar2.on{display:flex}
+#selBar2 span{flex:1;font-size:14px;font-weight:600}
+#selBar2 button{padding:10px 10px;font-weight:700;font-size:14px}
+.chk{display:flex;align-items:center;margin:10px 0;font-size:15px}
+.chk input{width:20px;height:20px;margin:0 8px 0 0;padding:0;flex:none}
+h3{margin:20px 0 8px;font-size:17px}
+.note{font-size:13px;color:var(--sub);line-height:1.5;margin:0 0 10px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tiles>div{background:var(--card);border-radius:14px;padding:14px}
+.tiles b{display:block;font-size:20px;margin-bottom:2px}
+.tiles span{font-size:12px;color:var(--sub)}
+.bars{display:flex;gap:8px;align-items:flex-end;height:150px;margin:12px 0;background:var(--card);border-radius:14px;padding:12px 10px}
+.bc{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;height:100%}
+.bc i{width:100%;max-width:26px;background:var(--accent);border-radius:5px 5px 2px 2px;display:block}
+.bc em{font-size:10px;color:var(--sub);font-style:normal}
+.bc u{font-size:11px;text-decoration:none}
+.ptabs button{padding:10px 2px;font-size:12.5px}
+.bmi.curc{outline:2px solid var(--accent);font-weight:700}
+.bmi .dot{width:12px;height:12px;border-radius:50%;flex:none}
+#nextBar{position:absolute;left:50%;transform:translateX(-50%);bottom:56px;z-index:4;background:var(--accent);color:var(--accent-text);border-radius:20px;padding:10px 18px;font-weight:700;font-size:14px;max-width:86%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+#reader.ui #nextBar{bottom:118px}
+.hl{border-radius:3px;color:inherit}
+.hl0{background:rgba(255,224,102,.55)}.hl1{background:rgba(140,230,154,.5)}.hl2{background:rgba(130,190,255,.5)}.hl3{background:rgba(255,150,170,.5)}
+.hl.hm{text-decoration:underline dotted;text-underline-offset:3px}
+#selBar{display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(28px + env(safe-area-inset-bottom,0px));z-index:8;background:var(--card);border:1px solid var(--border);border-radius:22px;padding:8px 12px;gap:10px;align-items:center;box-shadow:0 6px 20px rgba(0,0,0,.3)}
+#selBar.on{display:flex}
+#selBar button[data-c]{width:30px;height:30px;border-radius:50%;border:1px solid rgba(0,0,0,.15)}
+#selBar #sbMemo{font-size:14px;font-weight:600;padding:4px 6px;white-space:nowrap}
 </style>
 </head>
 <body>
 
 <!-- 홈 화면 -->
 <section id="home" class="view active">
-  <header><h1>내 서재</h1><button class="round" id="addBtn" aria-label="책 추가">+</button></header>
+  <header><h1>내 서재</h1><span class="hbtns"><button class="gear" aria-label="더보기">⚙︎</button><button class="round" id="addBtn" aria-label="책 추가">+</button></span></header>
   <div class="seg"><button data-tab="reading">읽고 있는 책</button><button data-tab="shelves">책장</button><button data-tab="all">전체</button></div>
+  <input id="libQ" type="search" placeholder="제목·저자·태그 검색"><div class="tagrow" id="tagRow"></div>
   <div class="bar2"><span id="sync"></span><select id="sort" aria-label="정렬"><option value="manual">직접 정렬</option><option value="recent">최근 읽은 순</option><option value="title">제목 순</option><option value="progress">진행률 순</option></select></div>
-  <div class="bar2" style="padding-bottom:6px"><b id="cnt" style="color:var(--text);font-size:15px"></b><span class="vt"><button id="vCover" aria-label="큰 표지로 보기">▣</button><button id="vList" aria-label="목록으로 보기">☰</button></span></div>
+  <div class="bar2" style="padding-bottom:6px"><b id="cnt" style="color:var(--text);font-size:15px"></b><span class="vt"><button id="selBtn">선택</button><button id="vCover" aria-label="큰 표지로 보기">▣</button><button id="vList" aria-label="목록으로 보기">☰</button></span></div>
   <div class="list" id="list"></div>
 </section>
 
 <!-- 내 책장 (시리즈 묶음) -->
 <section id="shelves" class="view">
-  <header><h1>내 서재</h1><button class="round" id="newShelf" aria-label="책장 만들기">+</button></header>
+  <header><h1>내 서재</h1><span class="hbtns"><button class="gear" aria-label="더보기">⚙︎</button><button class="round" id="newShelf" aria-label="책장 만들기">+</button></span></header>
   <div class="seg"><button data-tab="reading">읽고 있는 책</button><button data-tab="shelves">책장</button><button data-tab="all">전체</button></div>
   <div class="list" id="shelfList"></div>
 </section>
@@ -165,12 +209,25 @@ textarea{height:220px;resize:none}
   <div class="list" id="pkList"></div>
 </section>
 
+<!-- 더보기: 읽기 통계 + 백업/복원 -->
+<section id="more" class="view">
+  <header><button class="back" id="moreBack">‹ 서재</button><b>더보기</b><span style="width:48px"></span></header>
+  <div class="form">
+    <h3>읽기 통계</h3><div id="statBox"></div>
+    <h3>백업 · 복원</h3>
+    <p class="note">책, 책장, 북마크, 형광펜·메모, 읽기 설정을 파일 하나로 저장해 두고, 기기를 바꾸거나 데이터가 지워졌을 때 다시 불러올 수 있어요. 책이 많으면 파일이 커요.</p>
+    <div class="row"><button class="btn sub" id="bkMake" style="margin:0">백업 파일 만들기</button><label class="btn sub" for="bkFile" style="margin:0;text-align:center;cursor:pointer">백업에서 복원</label></div>
+    <input type="file" id="bkFile" accept=".json,application/json" hidden>
+    <p class="status" id="bkStatus"></p>
+  </div>
+</section>
+
 <!-- 책 추가 화면 -->
 <section id="add" class="view">
   <header><button class="back" id="addBack">‹ 뒤로</button><b>책 추가</b><span style="width:48px"></span></header>
   <div class="form">
     <label class="btn main" for="file" style="display:block;text-align:center;cursor:pointer">EPUB / TXT 파일 선택</label>
-    <input type="file" id="file" accept=".epub,.txt,application/epub+zip,text/plain" hidden>
+    <input type="file" id="file" multiple accept=".epub,.txt,application/epub+zip,text/plain" hidden>
     <p class="status" id="status"></p>
     <button class="btn sub" id="sample">샘플 책 추가 (테스트용)</button>
   </div>
@@ -189,12 +246,14 @@ textarea{height:220px;resize:none}
     <input id="eTitle" placeholder="제목">
     <div class="row" style="margin-bottom:12px"><button class="btn sub" id="eT1" style="margin:0;font-size:13px">첫 줄을 제목으로</button><button class="btn sub" id="eT2" style="margin:0;font-size:13px">첫 두 줄을 제목으로</button></div>
     <input id="eAuthor" placeholder="저자">
+    <input id="eTags" placeholder="태그 (쉼표로 구분, 예: 판타지, 시리즈)">
     <div class="row" style="margin-bottom:8px">
       <button class="btn sub" id="eEpub" style="margin:0">EPUB로 내보내기</button>
       <button class="btn sub" id="eTxt" style="margin:0">TXT로 내보내기</button>
     </div>
     <p class="status" id="eStatus"></p>
     <button class="btn main" id="eSave">저장</button>
+    <button class="btn sub" id="eDel" style="margin-top:12px;color:#d33;border-color:#d33">이 책 삭제</button>
   </div>
 </section>
 
@@ -204,6 +263,7 @@ textarea{height:220px;resize:none}
   <div class="scroll" id="scroll"><div id="wrap"><h2 id="bTitle"></h2><div id="body"></div></div></div>
   <div id="thin"><i></i></div>
   <div id="dim"></div>
+  <button id="nextBar" hidden></button>
   <div class="toolbar">
     <div class="trow"><button id="pgLbl" aria-label="위치로 이동">0%</button><input type="range" class="rng" id="seek" min="0" max="1000" value="0" aria-label="읽은 위치"></div>
     <div class="trow btns">
@@ -214,14 +274,16 @@ textarea{height:220px;resize:none}
 </section>
 
 <div id="dlg"><div class="sheet">
-  <p id="dTitle" style="font-weight:700;margin:0 0 12px;line-height:1.5"></p><input id="dInput">
+  <p id="dTitle" style="font-weight:700;margin:0 0 12px;line-height:1.5;white-space:pre-line"></p><input id="dInput">
   <div class="row"><button class="btn sub" id="dNo" style="margin:0">취소</button><button class="btn main" id="dYes" style="margin:0">확인</button></div>
 </div></div>
 
-<!-- 북마크 / 검색 -->
+<!-- 목차 / 북마크 / 형광펜 / 검색 -->
 <div id="panel"><div class="sheet tall">
-  <div class="ptabs"><button data-t="bm" class="on">🔖 북마크</button><button data-t="se">🔍 검색</button><button id="pClose">닫기</button></div>
-  <div id="pBm"><div id="bmList"></div></div>
+  <div class="ptabs"><button data-t="toc" class="on">📑 목차</button><button data-t="bm">🔖 북마크</button><button data-t="hl">🖍 형광펜</button><button data-t="se">🔍 검색</button><button id="pClose" style="flex:none;width:40px">✕</button></div>
+  <div id="pToc"><div id="tocList"></div></div>
+  <div id="pBm" hidden><div id="bmList"></div></div>
+  <div id="pHl" hidden><div id="hlList"></div></div>
   <div id="pSe" hidden>
     <div class="row" style="margin-bottom:8px"><input id="qIn" placeholder="찾을 단어" style="margin:0"><button class="btn main" id="qGo" style="margin:0;width:90px;flex:none">검색</button></div>
     <p id="qInfo" style="font-size:13px;color:var(--sub);margin:8px 2px"></p><div id="qList"></div>
@@ -236,6 +298,30 @@ textarea{height:220px;resize:none}
   <div class="srow2"><label>배경 색</label></div><div class="chips" id="bgRow"></div>
   <div class="row" style="margin-top:4px"><button class="btn sub" id="rsReset" style="margin:0">기본값</button><button class="btn sub" id="theme" aria-label="앱 다크모드 전환" style="margin:0"></button><button class="btn main" id="setDone" style="margin:0">완료</button></div>
 </div></div>
+
+<!-- 형광펜 메모 -->
+<div id="hlSheet"><div class="sheet">
+  <p id="hlQuote" style="margin:0 0 10px;font-size:14px;color:var(--sub);line-height:1.5"></p>
+  <div class="chips" id="hlColors"></div>
+  <textarea id="hlMemo" placeholder="메모 (선택, 500자까지)" style="height:20vh"></textarea>
+  <div class="row"><button class="btn sub" id="hlDel" style="margin:0">삭제</button><button class="btn sub" id="hlNo" style="margin:0">닫기</button><button class="btn main" id="hlYes" style="margin:0">저장</button></div>
+</div></div>
+
+<!-- 책 병합 -->
+<div id="mergeSheet"><div class="sheet tall">
+  <p style="font-weight:700;margin:0 0 4px">책 병합</p>
+  <p class="note">▲▼로 이어 붙일 순서를 정해요.</p>
+  <div id="mgList"></div>
+  <input id="mgTitle" placeholder="새 책 제목" style="margin-top:6px">
+  <label class="chk"><input type="checkbox" id="mgHead" checked>파일 사이에 구분 제목 넣기 (목차에 표시돼요)</label>
+  <label class="chk"><input type="checkbox" id="mgDel">합친 뒤 원본 책 삭제</label>
+  <p class="status" id="mgStatus" style="margin:6px 0"></p>
+  <div class="row"><button class="btn sub" id="mgNo" style="margin:0">취소</button><button class="btn main" id="mgYes" style="margin:0">합치기</button></div>
+</div></div>
+
+<!-- 서재 선택 모드 바 / 텍스트 선택 시 형광펜 바 -->
+<div id="selBar2"><span id="selCnt"></span><button id="sbMerge">병합</button><button id="sbTag">태그</button><button id="sbDel" style="color:#d33">삭제</button><button id="sbX">취소</button></div>
+<div id="selBar"><button data-c="0" style="background:#ffe066" aria-label="노랑"></button><button data-c="1" style="background:#8ce69a" aria-label="초록"></button><button data-c="2" style="background:#82beff" aria-label="파랑"></button><button data-c="3" style="background:#ff96aa" aria-label="분홍"></button><button id="sbMemo">📝 메모</button></div>
 
 <!-- 문단 편집 시트 -->
 <div id="sheet"><div class="sheet">
@@ -257,6 +343,7 @@ let fontSize = store.get('mybook:font', 18);
 let theme = store.get('mybook:theme', null);
 const COLORS = ['#3B5BDB','#C2255C','#2F9E44','#E8590C','#7048E8','#0C8599'];
 const $ = id => document.getElementById(id);
+let lastId = 0; const newId = () => { let t = Date.now(); if (t <= lastId) t = lastId + 1; lastId = t; return String(t); }; // 겹치지 않는 번호
 const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 // ---------- 화면 전환 ----------
@@ -264,6 +351,7 @@ let homeTab = store.get('mybook:htab', 'reading'); // 'reading'(읽고 있는 �
 function show(id){
   if (id === 'home' && homeTab === 'shelves') id = 'shelves';
   else if (id === 'shelves' && homeTab !== 'shelves') id = 'home';
+  if (id !== 'home' && selectMode) exitSelect();
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === id));
   document.querySelectorAll('.seg button').forEach(b => b.classList.toggle('on', b.dataset.tab === homeTab));
 }
@@ -280,24 +368,30 @@ $('theme').onclick = () => { theme = isDark() ? 'light' : 'dark'; store.set('myb
 let viewMode = store.get('mybook:view', 'cover'); // 'cover'(큰 표지) | 'list'(목록)
 let focusId = null; // 방금 만진 책: 화면을 다시 그린 뒤에도 그 책이 보이게
 // 읽고 있는 책 = 읽기 시작했고 아직 끝까지 읽지 않은 책
-function shown() { const v = view(); return homeTab === 'reading' ? v.filter(b => (b.progress || 0) > 0 && (b.progress || 0) < 0.99) : v; }
+function shown() {
+  let v = view();
+  if (homeTab === 'reading') v = v.filter(b => (b.progress || 0) > 0 && (b.progress || 0) < 0.99);
+  if (libTag) v = v.filter(b => (b.tags || []).includes(libTag));
+  if (libQ) v = v.filter(b => (b.title + ' ' + b.author + ' ' + (b.tags || []).join(' ')).toLowerCase().includes(libQ));
+  return v;
+}
 function renderHome(){
-  const items = shown(), L = $('list'), big = viewMode === 'cover' && items.length > 0;
+  renderTags(); const items = shown(), L = $('list'), big = viewMode === 'cover' && items.length > 0;
   L.className = big ? 'carousel' : 'list';
   $('cnt').textContent = `${homeTab === 'all' ? '전체' : '읽고 있는 책'} ${items.length}권`;
   $('vCover').classList.toggle('on', viewMode === 'cover'); $('vList').classList.toggle('on', viewMode === 'list');
-  L.innerHTML = !items.length ? (homeTab === 'reading' && books.length ? '<div class="empty">읽고 있는 책이 없어요.<br>"전체"에서 책을 열어 읽으면 여기에 나타나요.</div>' : '<div class="empty">아직 책이 없어요.<br>오른쪽 위 + 버튼으로 추가해 보세요.</div>') : items.map((b, i, arr) => {
+  L.innerHTML = !items.length ? (libQ || libTag ? '<div class="empty">조건에 맞는 책이 없어요.</div>' : homeTab === 'reading' && books.length ? '<div class="empty">읽고 있는 책이 없어요.<br>"전체"에서 책을 열어 읽으면 여기에 나타나요.</div>' : '<div class="empty">아직 책이 없어요.<br>오른쪽 위 + 버튼으로 추가해 보세요.</div>') : items.map((b, i, arr) => {
     const p = Math.round((b.progress || 0) * 100), manual = sortMode === 'manual';
     const vis = (up) => `style="visibility:${(up ? i > 0 : i < arr.length - 1) ? 'visible' : 'hidden'}"`;
     const bg = `background-color:${b.color};${b.cover ? `background-image:url(${b.cover})` : ''}`;
-    if (big) return `<div class="slide" data-id="${b.id}" role="button" tabindex="0">
-      <div class="bigcover" style="${bg}">${b.cover ? '' : esc(b.title)}</div>
+    if (big) return `<div class="slide${selSet.has(b.id) ? ' picked' : ''}" data-id="${b.id}" role="button" tabindex="0">
+      <div class="bigcover" style="${bg}">${b.cover ? '' : esc(b.title)}</div>${selectMode ? '<span class="ck"></span>' : ''}
       <div class="srow"><div class="stitle">${esc(b.title)}</div><button class="edit2" aria-label="편집">⋮</button></div>
       <div class="a">${esc(b.author)}</div>
       <div class="sprog"><div class="bar"><i style="width:${p}%"></i></div><span>${p}%</span></div>
       ${manual ? `<div class="mvrow"><button class="up" ${vis(true)} aria-label="앞으로">◀</button><span>순서 이동</span><button class="dn" ${vis(false)} aria-label="뒤로">▶</button></div>` : ''}</div>`;
     const mv = manual ? `<div class="mv"><button class="up" ${vis(true)} aria-label="위로">▲</button><button class="dn" ${vis(false)} aria-label="아래로">▼</button></div>` : '';
-    return `<div class="card" data-id="${b.id}" role="button" tabindex="0"><button class="edit" aria-label="편집">✎</button>
+    return `<div class="card${selSet.has(b.id) ? ' picked' : ''}" data-id="${b.id}" role="button" tabindex="0">${selectMode ? '<span class="ck"></span>' : ''}<button class="edit" aria-label="편집">✎</button>
       <div class="cover" style="${bg}">${b.cover ? '' : esc(b.title.charAt(0))}</div>
       <div class="info"><div class="t">${esc(b.title)}</div><div class="a">${esc(b.author)}</div>
       <div class="bar"><i style="width:${p}%"></i></div><div class="pct">${p}% 읽음</div></div>${mv}</div>`;
@@ -307,6 +401,7 @@ function renderHome(){
 }
 $('list').onclick = e => { const c = e.target.closest('.card,.slide'); if (!c) return;
   const id = c.dataset.id; focusId = id;
+  if (selectMode) { if (selSet.has(id)) selSet.delete(id); else selSet.add(id); renderHome(); updateSelBar(); return; }
   if (e.target.closest('.edit,.edit2')) openEdit(id);
   else if (e.target.closest('.up')) move(id, -1);
   else if (e.target.closest('.dn')) move(id, 1);
@@ -340,16 +435,20 @@ const setStatus = t => $('status').textContent = t;
 $('addBack').onclick = () => { setStatus(''); show('home'); };
 
 // 책 한 권을 저장 (저장 공간이 모자라면 실패 안내)
-async function addBook({ title, author, content, cover }) {
-  const book = { id: String(Date.now()), title, author: author || '작자 미상', content, cover: cover || '',
+async function addBook({ title, author, content, cover }, quiet) {
+  const book = { id: newId(), title, author: author || '작자 미상', content, cover: cover || '',
                  progress: 0, color: COLORS[books.length % COLORS.length] };
-  books.unshift(book); renumber(); setStatus('저장 중…');
+  books.unshift(book); renumber(); if (!quiet) setStatus('저장 중…');
   if (!(await saveBook(book)) && !cloud) { // 기기 저장소가 가득 찬 경우
-    books.shift(); renumber(); setStatus('저장 공간이 부족해요. 기기의 저장 공간을 확인해 주세요.'); return;
+    books.shift(); renumber();
+    if (quiet) throw new Error('저장 공간이 부족해요');
+    setStatus('저장 공간이 부족해요. 기기의 저장 공간을 확인해 주세요.'); return;
   }
+  cloudSave(book, true);
+  if (quiet) return book;
   await Promise.all(books.slice(1).map(saveMeta)); // 순서 번호 갱신
   homeTab = 'all'; store.set('mybook:htab', homeTab); // 새 책은 "전체"에서 바로 보이게
-  cloudSave(book, true); setStatus(''); renderHome(); show('home');
+  setStatus(''); renderHome(); show('home');
 }
 
 // ---- EPUB 읽기: EPUB은 zip 파일이라 압축을 풀어 본문 텍스트만 뽑아냅니다 ----
@@ -421,11 +520,20 @@ async function parseTxt(file) {
   return { title: file.name.replace(/\.txt$/i, ''), author: '', content, cover: '' };
 }
 $('file').onchange = async e => {
-  const f = e.target.files[0]; if (!f) return;
-  setStatus('불러오는 중…');
-  try { const r = await (/\.txt$/i.test(f.name) ? parseTxt(f) : parseEpub(f)); r.title = pickTitle(r); await addBook(r); }
-  catch (err) { setStatus('파일을 읽을 수 없어요: ' + err.message); }
+  const fs = [...e.target.files]; if (!fs.length) return;
+  fs.sort((x, y) => x.name.localeCompare(y.name, 'ko', { numeric: true }));
+  let ok = 0; const fail = [];
+  // 뒤쪽 파일부터 넣어서, 서재에서는 1화, 2화, 3화 순서로 보이게 해요
+  for (let k = fs.length - 1; k >= 0; k--) {
+    const f = fs[k]; setStatus(`불러오는 중… (${fs.length - k}/${fs.length}) ${f.name}`);
+    try { const r = await (/\.txt$/i.test(f.name) ? parseTxt(f) : parseEpub(f)); r.title = pickTitle(r); await addBook(r, true); ok++; }
+    catch (err) { fail.push(`${f.name} (${err.message})`); }
+  }
+  await Promise.all(books.map(saveMeta));
   e.target.value = ''; // 같은 파일을 다시 선택할 수 있게 초기화
+  if (ok) { homeTab = 'all'; store.set('mybook:htab', homeTab); renderHome(); }
+  if (fail.length) setStatus(`${ok}권 추가, 실패 ${fail.length}건: ${fail.join(', ')}`);
+  else if (ok) { setStatus(''); show('home'); }
 };
 
 const SAMPLE = Array.from({length:40}, (_, i) =>
@@ -444,7 +552,7 @@ function paintPreview() {
 function openEdit(id) {
   editId = id; newCover = undefined;
   const b = editing();
-  $('eTitle').value = b.title; $('eAuthor').value = b.author; $('eStatus').textContent = '';
+  $('eTitle').value = b.title; $('eAuthor').value = b.author; $('eTags').value = (b.tags || []).join(', '); $('eStatus').textContent = '';
   paintPreview(); show('edit');
 }
 // 사진을 표지 크기(160x230)로 잘라 줄여서 저장 용량을 아낌
@@ -504,7 +612,7 @@ $('eSave').onclick = async () => {
   const title = $('eTitle').value.trim();
   if (!title) { $('eStatus').textContent = '제목을 입력해 주세요.'; return; }
   const b = editing(), old = { ...b };
-  b.title = title; b.author = $('eAuthor').value.trim() || '작자 미상';
+  b.title = title; b.author = $('eAuthor').value.trim() || '작자 미상'; b.tags = parseTags($('eTags').value); b.xd = true;
   if (newCover !== undefined) b.cover = newCover;
   if (!(await saveMeta(b)) && !cloud) { Object.assign(b, old); $('eStatus').textContent = '저장 공간이 부족해요.'; return; }
   cloudSave(b, false);
@@ -514,7 +622,8 @@ $('eSave').onclick = async () => {
 // ---------- 읽기 화면 ----------
 let paras = [];          // 본문을 문단 배열로 나눈 것 (편집 단위)
 let editMode = false;
-const renderBody = () => $('body').innerHTML = paras.map((t, i) => t.trim() ? `<p data-i="${i}">${esc(t)}</p>` : '').join('');
+const renderBody = () => $('body').innerHTML = paras.map((t, i) => t.trim() ? `<p data-i="${i}">${paraHTML(i)}</p>` : '').join('');
+let nextInfo = null;     // 책장에서 이어 읽을 다음 책
 let cur = null;          // 지금 읽는 책
 let ratio = 0;           // 읽은 위치 (0~1 비율, 진행률 표시용)
 let lastAnchor = null;   // 마지막으로 확인한 "화면 맨 위 문단" 번호 (위치 복원의 기준)
@@ -565,6 +674,7 @@ function showPct() {
   if (mode === 'page') { const { w, pages } = pageInfo(); $('pgLbl').textContent = (Math.round(sc.scrollLeft / w) + 1) + ' / ' + pages; }
   else $('pgLbl').textContent = p + '%';
   $('thin').firstElementChild.style.width = p + '%';
+  $('nextBar').hidden = !(nextInfo && ratio >= 0.97);
   if (!seeking) $('seek').value = Math.round(ratio * 1000);
 }
 function syncRatio() { // 지금 스크롤 위치에서 진행률 계산
@@ -627,6 +737,7 @@ function openBook(id, from) {
   backTo = from || 'home';
   cur = books.find(b => b.id === id); if (!cur) return;
   ratio = cur.progress || 0; cur.lastRead = Date.now(); lastAnchor = cur.pos ?? null;
+  nextInfo = findNext(); $('nextBar').textContent = nextInfo ? '다음 책: ' + nextInfo.book.title + '  ▶' : '';
   $('bTitle').textContent = cur.title; paras = cur.content.split('\n\n'); renderBody();
   editMode = false; $('body').classList.remove('editing'); $('editMode').classList.remove('on');
   applyRS(); applyMode(); closePanels(); sc.scrollLeft = 0; sc.scrollTop = 0;
@@ -659,7 +770,7 @@ sc.addEventListener('click', e => {
 let tx = null; // 페이지 모드: 좌우로 밀어서 넘기기
 sc.addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, { passive: true });
 sc.addEventListener('touchend', e => {
-  if (mode !== 'page' || tx == null) return;
+  if (mode !== 'page' || tx == null || String(getSelection()).length) return;
   const dx = e.changedTouches[0].clientX - tx; tx = null;
   if (Math.abs(dx) > 50) turn(dx < 0 ? 1 : -1);
 }, { passive: true });
@@ -745,14 +856,104 @@ function renderBm() {
   $('bmList').innerHTML = bms.length ? bms.map(b => `<div class="bmi" data-p="${b.p}"><div class="bt">${esc(b.t || '(빈 문단)')}</div><div class="bs">${pctOf(b.p)}%</div><button class="bdel" aria-label="삭제">✕</button></div>`).join('')
     : '<div class="empty" style="margin-top:24px">북마크가 없어요.<br>읽는 중 위쪽의 ☆ 북마크 버튼으로 추가해요.</div>';
 }
+let lastPanelTab = 'toc';
 function panelTab(t) {
+  lastPanelTab = t;
   $('panel').querySelectorAll('.ptabs [data-t]').forEach(b => b.classList.toggle('on', b.dataset.t === t));
-  $('pBm').hidden = t !== 'bm'; $('pSe').hidden = t !== 'se';
-  if (t === 'se') $('qIn').focus({ preventScroll: true });
+  $('pToc').hidden = t !== 'toc'; $('pBm').hidden = t !== 'bm'; $('pHl').hidden = t !== 'hl'; $('pSe').hidden = t !== 'se';
+  if (t === 'toc') renderToc(); else if (t === 'bm') renderBm(); else if (t === 'hl') renderHlList();
+  else $('qIn').focus({ preventScroll: true });
 }
-$('panelBtn').onclick = () => { renderBm(); panelTab('bm'); $('panel').classList.add('open'); };
+$('panelBtn').onclick = () => { $('panel').classList.add('open'); panelTab(lastPanelTab); };
 $('panel').addEventListener('click', e => { if (e.target === $('panel') || e.target.id === 'pClose') { $('panel').classList.remove('open'); return; }
   const t = e.target.closest('[data-t]'); if (t) panelTab(t.dataset.t); });
+
+// ---- 장 목차: "2장", "제3화", Chapter 4, 프롤로그 같은 제목 줄을 자동으로 찾아요 ----
+const CH_RE = /^(제\s*\d+\s*(장|화|회|편|부|막|권)|\d+\s*(장|화|회|편|부|막)(\s|$|[.:\-·])|chapter\s*\d+|prologue|epilogue|프롤로그|에필로그|외전|서장|종장|후기|작가의 말|작가후기)/i;
+function buildToc() {
+  const out = [];
+  paras.forEach((t, i) => { const x = t.trim(); if (!x || x.length > 50) return;
+    if (t.startsWith('\n') || CH_RE.test(x)) out.push({ i, t: x.replace(/\s+/g, ' ') }); });
+  return out.slice(0, 3000);
+}
+function renderToc() {
+  const toc = buildToc(); let c = -1; toc.forEach((x, k) => { if (x.i <= (lastAnchor ?? 0)) c = k; });
+  $('tocList').innerHTML = toc.length ? toc.map((x, k) => `<div class="bmi${k === c ? ' curc' : ''}" data-i="${x.i}"><div class="bt">${esc(x.t)}</div><div class="bs">${pctOf(x.i)}%</div></div>`).join('')
+    : '<div class="empty" style="margin-top:24px">목차로 쓸 제목(예: "2장", "제3화")을 찾지 못했어요.</div>';
+  const el = $('tocList').querySelector('.curc'); if (el) el.scrollIntoView({ block: 'center' });
+}
+$('tocList').onclick = e => { const it = e.target.closest('.bmi'); if (!it) return; $('panel').classList.remove('open'); gotoPara(+it.dataset.i); };
+
+// ---- 형광펜 · 메모: 글자를 길게 눌러 선택하면 색 버튼이 나타나요 ----
+const HLC = ['#ffe066', '#8ce69a', '#82beff', '#ff96aa'];
+let selCache = null, hlCur = null;
+function paraHTML(i) {
+  const t = paras[i], hs = ((cur && cur.hl) || []).filter(h => h.p === i && h.s < h.e && h.e <= t.length).sort((a, b) => a.s - b.s);
+  if (!hs.length) return esc(t);
+  let out = '', pos = 0;
+  for (const h of hs) { if (h.s < pos) continue;
+    out += esc(t.slice(pos, h.s)) + `<span class="hl hl${h.c}${h.m ? ' hm' : ''}" data-h="${h.id}">${esc(t.slice(h.s, h.e))}</span>`; pos = h.e; }
+  return out + esc(t.slice(pos));
+}
+const repaintHl = i => { const pe = $('body').querySelector(`p[data-i="${i}"]`); if (pe) pe.innerHTML = paraHTML(i); };
+function hlDirty() { cur.xd = true; persist(true); }
+function selInfo() { // 지금 선택한 글자가 어느 문단의 몇 번째 글자부터 몇 번째까지인지
+  const sel = getSelection(); if (!sel || sel.isCollapsed || !sel.rangeCount) return null;
+  const r = sel.getRangeAt(0), n0 = r.startContainer, el = n0.nodeType === 3 ? n0.parentElement : n0;
+  const p = el && el.closest ? el.closest('p[data-i]') : null; if (!p || !$('body').contains(p)) return null;
+  const a = document.createRange(); a.selectNodeContents(p); a.setEnd(r.startContainer, r.startOffset);
+  const st = a.toString().length; let en;
+  if (p.contains(r.endContainer)) { const b = document.createRange(); b.selectNodeContents(p); b.setEnd(r.endContainer, r.endOffset); en = b.toString().length; }
+  else en = p.textContent.length;
+  return en > st ? { i: +p.dataset.i, s: st, e: en } : null;
+}
+document.addEventListener('selectionchange', () => {
+  if (!readerActive() || editMode) { $('selBar').classList.remove('on'); return; }
+  const si = selInfo(); if (si) selCache = si; $('selBar').classList.toggle('on', !!si);
+});
+['pointerdown', 'mousedown'].forEach(ev => $('selBar').addEventListener(ev, e => e.preventDefault())); // 버튼을 눌러도 선택이 풀리지 않게
+$('selBar').addEventListener('touchstart', e => e.preventDefault(), { passive: false });
+function addHl(si, c) {
+  cur.hl = cur.hl || [];
+  const clash = cur.hl.filter(h => h.p === si.i && h.s < si.e && si.s < h.e).length;
+  if (cur.hl.length - clash >= 120) { alert('형광펜은 한 책에 120개까지 만들 수 있어요.'); return null; }
+  cur.hl = cur.hl.filter(h => !(h.p === si.i && h.s < si.e && si.s < h.e));
+  const h = { id: newId(), p: si.i, s: si.s, e: si.e, c, m: '', at: Date.now() };
+  cur.hl.push(h); repaintHl(si.i);
+  getSelection().removeAllRanges(); selCache = null; $('selBar').classList.remove('on'); hlDirty(); return h;
+}
+$('selBar').onclick = e => { const b = e.target.closest('button'); if (!b || !selCache) return;
+  const memo = b.id === 'sbMemo', h = addHl(selCache, memo ? 0 : +b.dataset.c); if (h && memo) openHl(h.id); };
+function paintHlColors() { $('hlColors').innerHTML = HLC.map((c, k) => `<button class="sw${k === hlCur.c ? ' on' : ''}" data-c="${k}" style="background:${c}" aria-label="색 ${k + 1}"></button>`).join(''); }
+function openHl(id) {
+  hlCur = (cur.hl || []).find(h => h.id === id); if (!hlCur) return;
+  lastAnchor = getAnchor();
+  $('hlQuote').textContent = '“' + (paras[hlCur.p] || '').slice(hlCur.s, hlCur.e).slice(0, 140) + '”';
+  paintHlColors(); $('hlMemo').value = hlCur.m || ''; $('hlSheet').classList.add('open');
+}
+const closeHl = () => { $('hlSheet').classList.remove('open'); $('hlMemo').blur(); hlCur = null; };
+$('hlColors').onclick = e => { const b = e.target.closest('[data-c]'); if (b && hlCur) { hlCur.c = +b.dataset.c; paintHlColors(); } };
+$('hlYes').onclick = () => { if (!hlCur) return; hlCur.m = $('hlMemo').value.trim().slice(0, 500); repaintHl(hlCur.p); hlDirty(); closeHl(); };
+$('hlNo').onclick = () => { if (hlCur) repaintHl(hlCur.p); closeHl(); };
+$('hlDel').onclick = () => { if (!hlCur) return; const pi = hlCur.p; cur.hl = cur.hl.filter(h => h !== hlCur); repaintHl(pi); hlDirty(); closeHl(); };
+function renderHlList() {
+  const hs = [...(cur.hl || [])].sort((a, b) => a.p - b.p || a.s - b.s);
+  $('hlList').innerHTML = hs.length ? hs.map(h => `<div class="bmi q" data-h="${h.id}"><span class="dot" style="background:${HLC[h.c]}"></span><div class="bt">${esc((paras[h.p] || '').slice(h.s, h.e).slice(0, 80))}${h.m ? `<div style="color:var(--sub);font-size:13px;margin-top:4px">📝 ${esc(h.m)}</div>` : ''}</div><div class="bs">${pctOf(h.p)}%</div><button class="bdel" aria-label="삭제">✕</button></div>`).join('')
+    : '<div class="empty" style="margin-top:24px">형광펜이 없어요.<br>본문의 글자를 길게 눌러 선택하면 색 버튼이 나타나요.</div>';
+}
+$('hlList').onclick = e => { const it = e.target.closest('.bmi'); if (!it) return; const h = (cur.hl || []).find(x => x.id === it.dataset.h); if (!h) return;
+  if (e.target.closest('.bdel')) { cur.hl = cur.hl.filter(x => x !== h); repaintHl(h.p); hlDirty(); renderHlList(); return; }
+  $('panel').classList.remove('open'); gotoPara(h.p); };
+
+// ---- 책장에서 다음 권 이어 읽기 ----
+function findNext() {
+  const sh = backTo === 'shelf' ? shelfById(curShelf) : shelves.find(x => x.bookIds.includes(cur.id));
+  if (!sh) return null;
+  for (let j = sh.bookIds.indexOf(cur.id) + 1; j < sh.bookIds.length; j++) { const nb = bookById(sh.bookIds[j]); if (nb) return { book: nb, shelf: sh }; }
+  return null;
+}
+$('nextBar').onclick = () => { if (!nextInfo) return; persist(true); curShelf = nextInfo.shelf.id; openBook(nextInfo.book.id, 'shelf'); };
+
 $('bmList').onclick = e => {
   const it = e.target.closest('.bmi'); if (!it) return; const pn = +it.dataset.p;
   if (e.target.closest('.bdel')) { cur.bookmarks = cur.bookmarks.filter(b => b.p !== pn); renderBm(); updateBm(); persist(true); return; }
@@ -780,7 +981,7 @@ function gotoPara(i, k = 0, len = 0) { // 문단(또는 검색어 위치)으로 
   const t = paras[i]; let mk = null;
   if (len) {
     p.innerHTML = esc(t.slice(0, k)) + '<mark>' + esc(t.slice(k, k + len)) + '</mark>' + esc(t.slice(k + len)); mk = p.querySelector('mark');
-    setTimeout(() => { if (p.isConnected && p.querySelector('mark')) p.textContent = paras[i]; }, 4000);
+    setTimeout(() => { if (p.isConnected && p.querySelector('mark')) p.innerHTML = paraHTML(i); }, 4000);
   }
   hold(300);
   const s = sc.getBoundingClientRect(), r = (mk || p).getClientRects()[0] || p.getBoundingClientRect();
@@ -801,6 +1002,8 @@ $('editMode').onclick = () => {
 };
 let sheetI = null, sheetEl = null, editAnchor = null;
 $('body').onclick = e => {
+  const hs = e.target.closest('.hl');
+  if (hs && !editMode) { e.stopPropagation(); openHl(hs.dataset.h); return; }
   if (!editMode) return;
   const p = e.target.closest('p[data-i]');
   if (!p || String(getSelection()).length) return; // 글자 선택 중이면 무시
@@ -820,7 +1023,9 @@ async function commit(text) { // text가 빈 문자열이면 문단 삭제
   if (!(await saveContent(cur)) && !cloud) { // 저장 실패 시 되돌리기
     paras[sheetI] = old; cur.content = paras.join('\n\n'); alert('저장 공간이 부족해요.'); return;
   }
-  if (text) sheetEl.textContent = paras[sheetI]; else sheetEl.remove();
+  cur.xd = true;
+  if (text) { if (paras[sheetI] !== old) cur.hl = (cur.hl || []).filter(h => h.p !== sheetI); sheetEl.innerHTML = paraHTML(sheetI); }
+  else { cur.hl = (cur.hl || []).filter(h => h.p !== sheetI); sheetEl.remove(); }
   cloudSave(cur, true);
   closeSheet();
 }
@@ -843,7 +1048,7 @@ const put = (name, key, val) => new Promise((res, rej) => {
 const safe = pr => pr.then(() => true, () => false); // 실패(저장 공간 부족 등)하면 false
 const metaOf = b => ({ id: b.id, title: b.title, author: b.author, cover: b.cover || '', color: b.color,
                        order: b.order ?? 0, progress: b.progress || 0, lastRead: b.lastRead || 0,
-                       pos: b.pos ?? null, bookmarks: b.bookmarks || [] });
+                       pos: b.pos ?? null, bookmarks: b.bookmarks || [], hl: b.hl || [], tags: b.tags || [] });
 const saveMeta = b => idb ? safe(put('meta', b.id, metaOf(b))) : Promise.resolve(store.set('mybook:books', books));
 const saveContent = b => idb ? safe(put('content', b.id, b.content)) : Promise.resolve(store.set('mybook:books', books));
 const saveBook = async b => idb ? (await saveContent(b)) && (await saveMeta(b)) : store.set('mybook:books', books);
@@ -883,6 +1088,7 @@ async function cloudSaveNow(b, withContent) {
     }
     await cloud.doc('b_' + b.id).set({ kind: 'book', id: b.id, title: b.title, author: b.author, cover: b.cover || '',
       progress: b.progress || 0, color: b.color, n: chunks.length, order: b.order ?? 0, lastRead: b.lastRead || 0, pos: b.pos ?? null, bookmarks: b.bookmarks || [] });
+    if (b.xd || withContent) { await cloud.doc('x_' + b.id).set({ kind: 'extra', bookId: b.id, hl: b.hl || [], tags: b.tags || [] }); b.xd = false; }
     setSync('☁︎ 계정에 저장됨');
   } catch (e) { setSync('⚠︎ 계정 저장 실패 (이 브라우저에는 저장됨)'); }
 }
@@ -892,18 +1098,18 @@ async function initCloud() {
     const uid = user && await user.id();
     if (!db || !uid) { setSync('이 기기에만 저장 중 · 내보내기로 백업하세요'); return; }
     cloud = db.collection('data/users/' + uid);
-    const metas = {}, chunks = {}, shelfDocs = {}, restored = [];
+    const metas = {}, chunks = {}, shelfDocs = {}, restored = [], extras = {}; let statsDoc = null;
     (await cloud.get()).docs.forEach(d => { const x = d.data();
-      if (x.kind === 'book') metas[x.id] = x; else if (x.kind === 'shelf') shelfDocs[x.id] = x; else if (x.kind === 'chunk') (chunks[x.bookId] = chunks[x.bookId] || [])[x.i] = x.text; });
+      if (x.kind === 'book') metas[x.id] = x; else if (x.kind === 'shelf') shelfDocs[x.id] = x; else if (x.kind === 'extra') extras[x.bookId] = x; else if (x.kind === 'stats') statsDoc = x; else if (x.kind === 'chunk') (chunks[x.bookId] = chunks[x.bookId] || [])[x.i] = x.text; });
     Object.values(metas).forEach(m => { // 계정 → 이 기기로 복원
       const parts = chunks[m.id] || [];
       if (parts.length < m.n || parts.some(p => p == null) || (cur && cur.id === m.id)) return;
       chunkCache[m.id] = parts;
-      const book = { id: m.id, title: m.title, author: m.author, cover: m.cover, progress: m.progress, color: m.color, order: m.order, lastRead: m.lastRead, pos: m.pos, bookmarks: m.bookmarks || [], content: parts.join('') };
+      const book = { id: m.id, title: m.title, author: m.author, cover: m.cover, progress: m.progress, color: m.color, order: m.order, lastRead: m.lastRead, pos: m.pos, bookmarks: m.bookmarks || [], hl: extras[m.id] ? extras[m.id].hl || [] : (books.find(b => b.id === m.id)?.hl || []), tags: extras[m.id] ? extras[m.id].tags || [] : (books.find(b => b.id === m.id)?.tags || []), content: parts.join('') };
       const i = books.findIndex(b => b.id === m.id), same = i >= 0 && books[i].content === book.content;
       if (i >= 0) books[i] = book; else books.push(book); restored.push([book, !same]);
     });
-    books.sort((a, b) => (a.order ?? 1e9) - (b.order ?? 1e9) || b.id - a.id); renderHome();
+    books.sort((a, b) => (a.order ?? 1e9) - (b.order ?? 1e9) || b.id - a.id); renderHome(); if (statsDoc) mergeStats(statsDoc.days);
     for (const [b, full] of restored) await (full ? saveBook(b) : saveMeta(b));
     Object.values(shelfDocs).forEach(x => { // 계정의 책장을 이 기기로
       const sh = { id: x.id, name: x.name, bookIds: x.bookIds || [], order: x.order || 0 }, i = shelves.findIndex(y => y.id === x.id);
@@ -917,20 +1123,20 @@ async function initCloud() {
 }
 
 // ---------- 내보내기: 수정된 사본을 EPUB / TXT 파일로 저장 ----------
-async function saveFile(filename, data) {
+async function saveFile(filename, data, say = t => { say(t); }) {
   const dl = await window.claude?.use('downloads');
   if (!dl) {
     const blob = data instanceof Blob ? data : new Blob([data], { type: 'text/plain;charset=utf-8' });
     const file = new File([blob], filename, { type: blob.type || 'application/octet-stream' });
     try {
-      if (navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file] }); $('eStatus').textContent = '내보냈어요.'; return; }
+      if (navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file] }); say('내보냈어요.'); return; }
     } catch (e) { if (e.name === 'AbortError') return; }
     const url = URL.createObjectURL(blob), a = document.createElement('a');
     a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 10000); $('eStatus').textContent = '내보냈어요.'; return;
+    setTimeout(() => URL.revokeObjectURL(url), 10000); say('내보냈어요.'); return;
   }
-  try { await dl.save({ filename, data }); $('eStatus').textContent = '내보냈어요.'; }
-  catch (e) { $('eStatus').textContent = e.code === 'declined' ? '' : '내보내기에 실패했어요.'; }
+  try { await dl.save({ filename, data }); say('내보냈어요.'); }
+  catch (e) { say(e.code === 'declined' ? '' : '내보내기에 실패했어요.'); }
 }
 const fname = b => b.title.replace(/[\\/:*?"<>|]/g, '_');
 $('eTxt').onclick = () => { const b = editing();
@@ -1038,9 +1244,172 @@ $('pkDone').onclick = () => {
   const added = [...pickSet].filter(id => !kept.includes(id)).map(bookById).filter(Boolean).sort(natural).map(b => b.id);
   sh.bookIds = [...kept, ...added]; touch(sh); show('shelf');                  // 새로 담은 책은 1권, 2권… 순으로 뒤에 붙임
 };
-document.querySelectorAll('.seg').forEach(sg => sg.onclick = e => { const b = e.target.closest('button'); if (!b) return;
+document.querySelectorAll('.seg').forEach(sg => sg.onclick = e => { const b = e.target.closest('button'); if (!b) return; exitSelect();
   homeTab = b.dataset.tab; store.set('mybook:htab', homeTab);
   if (homeTab === 'shelves') renderShelves(); else renderHome(); show('home'); });
+
+// ---------- 서재: 검색 · 태그 · 선택 · 병합 · 삭제 ----------
+let libQ = '', libTag = null, selectMode = false, selSet = new Set();
+const parseTags = s => [...new Set(s.split(',').map(t => t.trim().replace(/^#/, '')).filter(Boolean))].slice(0, 12);
+function renderTags() {
+  const cnt = {}; books.forEach(b => (b.tags || []).forEach(t => cnt[t] = (cnt[t] || 0) + 1));
+  const tags = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a] || a.localeCompare(b, 'ko'));
+  if (libTag && !cnt[libTag]) libTag = null;
+  $('tagRow').style.display = tags.length ? '' : 'none';
+  $('tagRow').innerHTML = tags.length ? `<button data-t="" class="${libTag ? '' : 'on'}">전체</button>` + tags.map(t => `<button data-t="${esc(t)}" class="${t === libTag ? 'on' : ''}">#${esc(t)}</button>`).join('') : '';
+}
+$('tagRow').onclick = e => { const b = e.target.closest('button'); if (!b) return; libTag = b.dataset.t || null; renderHome(); };
+$('libQ').oninput = e => { libQ = e.target.value.trim().toLowerCase(); renderHome(); };
+
+function updateSelBar() { $('selBar2').classList.toggle('on', selectMode); $('selCnt').textContent = `${selSet.size}권 선택`; $('selBtn').textContent = selectMode ? '완료' : '선택'; }
+function exitSelect() { selectMode = false; selSet.clear(); updateSelBar(); }
+$('selBtn').onclick = () => { if (selectMode) exitSelect(); else { selectMode = true; selSet.clear(); updateSelBar(); } renderHome(); };
+$('sbX').onclick = () => { exitSelect(); renderHome(); };
+const selBooks = () => [...selSet].map(bookById).filter(Boolean);
+
+// 책 삭제 (기기 + 계정 + 책장에서 모두)
+const del = (name, key) => new Promise((res, rej) => { const t = idb.transaction(name, 'readwrite'); t.objectStore(name).delete(key); t.oncomplete = () => res(true); t.onerror = t.onabort = () => rej(t.error); });
+const tryDel = async id => { try { await cloud.doc(id).delete(); } catch (e) {} };
+const cloudDelBook = b => (q = q.then(async () => { if (!cloud) return;
+  await tryDel('b_' + b.id); // 책 정보를 먼저 지워야 다음 실행 때 다시 살아나지 않아요
+  const n = Math.max((chunkCache[b.id] || []).length, chunksOf(b.content || '').length);
+  for (let i = 0; i < n; i++) await tryDel('c_' + b.id + '_' + i);
+  await tryDel('x_' + b.id); delete chunkCache[b.id]; }));
+async function delBook(b) {
+  const i = books.indexOf(b); if (i >= 0) books.splice(i, 1);
+  if (idb) { await safe(del('meta', b.id)); await safe(del('content', b.id)); } else store.set('mybook:books', books);
+  let ch = false;
+  shelves.forEach(sh => { if (sh.bookIds.includes(b.id)) { sh.bookIds = sh.bookIds.filter(x => x !== b.id); cloudShelf(sh); ch = true; } });
+  if (ch) saveShelves();
+  cloudDelBook(b);
+}
+$('eDel').onclick = async () => {
+  const b = editing(); if (!b) return;
+  if (!await dialog(`"${b.title}" 책을 삭제할까요?\n북마크·형광펜도 함께 삭제되고 되돌릴 수 없어요.`, { ok: '삭제' })) return;
+  await delBook(b); renderHome(); renderShelves(); show('home');
+};
+$('sbDel').onclick = async () => {
+  const bs = selBooks(); if (!bs.length) return;
+  if (!await dialog(`선택한 ${bs.length}권을 삭제할까요?\n북마크·형광펜도 함께 삭제되고 되돌릴 수 없어요.`, { ok: '삭제' })) return;
+  for (const b of bs) await delBook(b);
+  exitSelect(); renderHome(); renderShelves();
+};
+$('sbTag').onclick = async () => {
+  const bs = selBooks(); if (!bs.length) return;
+  const v = await dialog(`선택한 ${bs.length}권에 추가할 태그 (쉼표로 구분)`, { input: true, ok: '추가' }); if (!v) return;
+  const add = parseTags(v);
+  for (const b of bs) { b.tags = [...new Set([...(b.tags || []), ...add])].slice(0, 12); b.xd = true; await saveMeta(b); cloudSave(b, false); }
+  exitSelect(); renderHome();
+};
+
+// 책 병합
+let mgIds = [];
+$('sbMerge').onclick = async () => {
+  const bs = selBooks();
+  if (bs.length < 2) { await dialog('병합하려면 책을 2권 이상 선택해 주세요.', { ok: '확인' }); return; }
+  bs.sort(natural); mgIds = bs.map(b => b.id);
+  $('mgTitle').value = bs[0].title; $('mgStatus').textContent = ''; renderMg(); $('mergeSheet').classList.add('open');
+};
+function renderMg() {
+  $('mgList').innerHTML = mgIds.map((id, i) => `<div class="bmi" data-id="${id}" style="cursor:default"><div class="bt">${i + 1}. ${esc(bookById(id).title)}</div>
+    <button class="bdel mgup" style="visibility:${i ? 'visible' : 'hidden'}" aria-label="위로">▲</button><button class="bdel mgdn" style="visibility:${i < mgIds.length - 1 ? 'visible' : 'hidden'}" aria-label="아래로">▼</button></div>`).join('');
+}
+$('mgList').onclick = e => {
+  const it = e.target.closest('.bmi'); if (!it) return; const i = mgIds.indexOf(it.dataset.id);
+  const j = e.target.closest('.mgup') ? i - 1 : e.target.closest('.mgdn') ? i + 1 : -1;
+  if (j < 0 || j >= mgIds.length) return; [mgIds[i], mgIds[j]] = [mgIds[j], mgIds[i]]; renderMg();
+};
+$('mgNo').onclick = () => $('mergeSheet').classList.remove('open');
+$('mgYes').onclick = async () => {
+  const title = $('mgTitle').value.trim(); if (!title) { $('mgStatus').textContent = '제목을 입력해 주세요.'; return; }
+  const srcs = mgIds.map(id => bookById(id)).filter(Boolean), head = $('mgHead').checked, delSrc = $('mgDel').checked;
+  if (srcs.length < 2) { $('mgStatus').textContent = '합칠 책을 찾지 못했어요.'; return; }
+  $('mgStatus').textContent = '합치는 중…';
+  const parts = [], bms = [], hls = []; let off = 0;
+  for (const b of srcs) {
+    if (head) { parts.push('\n' + b.title); off++; }          // 앞에 줄바꿈이 있는 문단 = 제목 (목차에 나타나요)
+    parts.push(b.content);
+    (b.bookmarks || []).forEach(x => bms.push({ ...x, p: x.p + off }));
+    (b.hl || []).forEach(x => hls.push({ ...x, p: x.p + off }));
+    off += b.content.split('\n\n').length;
+  }
+  const f = srcs[0];
+  const nb = { id: newId(), title, author: f.author, content: parts.join('\n\n'), cover: f.cover || '', color: f.color, progress: 0, lastRead: Date.now(),
+               bookmarks: bms, hl: hls, tags: [...new Set(srcs.flatMap(b => b.tags || []))], xd: true };
+  books.unshift(nb); renumber();
+  if (!(await saveBook(nb)) && !cloud) { books.shift(); renumber(); $('mgStatus').textContent = '저장 공간이 부족해요.'; return; }
+  await Promise.all(books.slice(1).map(saveMeta));
+  cloudSave(nb, true);
+  if (delSrc) {
+    shelves.forEach(sh => { const idx = sh.bookIds.findIndex(id => mgIds.includes(id)); if (idx < 0) return; // 책장에서는 합친 책이 그 자리를 대신해요
+      sh.bookIds = sh.bookIds.filter((id, k) => k === idx || !mgIds.includes(id)); sh.bookIds[idx] = nb.id; cloudShelf(sh); });
+    saveShelves();
+    for (const b of srcs) await delBook(b);
+  }
+  homeTab = 'all'; store.set('mybook:htab', homeTab);
+  $('mergeSheet').classList.remove('open'); exitSelect(); renderHome(); renderShelves(); show('home');
+};
+
+// ---------- 읽기 통계 ----------
+let stats = store.get('mybook:stats', { days: {} }); if (!stats.days) stats.days = {};
+const dkey = d => { d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+let lastTouch = Date.now(), statsDirty = false, statsCloudDirty = false, tick = 0;
+['pointerdown', 'touchstart', 'keydown', 'scroll'].forEach(ev => addEventListener(ev, () => { lastTouch = Date.now(); }, { passive: true, capture: true }));
+setInterval(() => { // 책을 읽는 화면이 켜져 있고 최근 90초 안에 만진 적이 있을 때만 읽은 시간으로 셈
+  tick++;
+  if (readerActive() && !document.hidden && Date.now() - lastTouch < 90000) { const k = dkey(); stats.days[k] = (stats.days[k] || 0) + 5; statsDirty = statsCloudDirty = true; }
+  if (statsDirty && tick % 6 === 0) { store.set('mybook:stats', stats); statsDirty = false; }
+  if (statsCloudDirty && tick % 24 === 0) { statsCloudDirty = false; cloudStats(); }
+}, 5000);
+addEventListener('pagehide', () => store.set('mybook:stats', stats));
+const cloudStats = () => (q = q.then(async () => { if (!cloud) return; try { await cloud.doc('stats').set({ kind: 'stats', days: stats.days }); } catch (e) {} }));
+function mergeStats(days) { if (!days) return; for (const [k, v] of Object.entries(days)) if (v > (stats.days[k] || 0)) stats.days[k] = v; store.set('mybook:stats', stats); }
+function fmtT(sec) { const m = Math.round(sec / 60), h = Math.floor(m / 60); return h ? `${h}시간 ${m % 60}분` : `${m}분`; }
+function renderStats() {
+  const today = stats.days[dkey()] || 0; let total = 0; Object.values(stats.days).forEach(v => total += v);
+  let streak = 0; const d = new Date(); if ((stats.days[dkey(d)] || 0) < 60) d.setDate(d.getDate() - 1); // 오늘 아직 안 읽었어도 어제까지 이어졌으면 유지
+  while ((stats.days[dkey(d)] || 0) >= 60) { streak++; d.setDate(d.getDate() - 1); }
+  const done = books.filter(b => (b.progress || 0) >= 0.99).length;
+  const days7 = []; for (let i = 6; i >= 0; i--) { const x = new Date(); x.setDate(x.getDate() - i); days7.push({ w: '일월화수목금토'[x.getDay()], v: stats.days[dkey(x)] || 0 }); }
+  const mx = Math.max(60, ...days7.map(x => x.v));
+  $('statBox').innerHTML = `<div class="tiles"><div><b>${fmtT(today)}</b><span>오늘 읽은 시간</span></div><div><b>${streak}일</b><span>연속 독서</span></div><div><b>${done}권</b><span>완독한 책</span></div><div><b>${fmtT(total)}</b><span>총 읽은 시간</span></div></div>
+    <div class="bars">${days7.map(x => `<div class="bc"><em>${Math.round(x.v / 60)}분</em><i style="height:${Math.max(3, x.v / mx * 90)}px"></i><u>${x.w}</u></div>`).join('')}</div>`;
+}
+document.querySelectorAll('.gear').forEach(g => g.onclick = () => { renderStats(); $('bkStatus').textContent = ''; show('more'); });
+$('moreBack').onclick = () => show('home');
+
+// ---------- 백업 · 복원 ----------
+function backupParts() { // 책이 커도 문자열 하나로 합치지 않고 조각 배열로 파일을 만들어요
+  const p = ['{"app":"mybook","v":1,"at":' + Date.now() + ',"rs":' + JSON.stringify(rs) + ',"stats":' + JSON.stringify(stats.days) + ',"shelves":' + JSON.stringify(shelves) + ',"books":['];
+  books.forEach((b, i) => p.push((i ? ',' : '') + JSON.stringify(b)));
+  p.push(']}'); return p;
+}
+$('bkMake').onclick = () => { $('bkStatus').textContent = '백업 파일을 만드는 중…';
+  saveFile(`MyBook-백업-${dkey()}.json`, new Blob(backupParts(), { type: 'application/json' }), t => $('bkStatus').textContent = t); };
+async function restoreBackup(d) {
+  if (!d || d.app !== 'mybook' || !Array.isArray(d.books)) throw new Error('MyBook 백업 파일이 아니에요');
+  let added = 0, updated = 0;
+  for (const nb of d.books) {
+    if (!nb || !nb.id || typeof nb.content !== 'string') continue;
+    const i = books.findIndex(b => b.id === nb.id);
+    if (i < 0) { books.push(nb); added++; }
+    else if ((nb.lastRead || 0) > (books[i].lastRead || 0)) { books[i] = nb; updated++; }
+    else continue;
+    nb.xd = true; await saveBook(nb); cloudSave(nb, true);
+  }
+  renumber(); await Promise.all(books.map(saveMeta));
+  (d.shelves || []).forEach(sh => { if (sh && sh.id && !shelfById(sh.id)) { shelves.push(sh); cloudShelf(sh); } }); saveShelves();
+  if (d.rs) { rs = { ...RS_DEF, ...d.rs }; store.set('mybook:rs', rs); applyRS(); }
+  mergeStats(d.stats);
+  return { added, updated };
+}
+$('bkFile').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; const say = t => $('bkStatus').textContent = t; say('읽는 중…');
+  try { const r = await restoreBackup(JSON.parse(await f.text())); renderHome(); renderShelves(); renderStats();
+    say(`복원 완료: 새 책 ${r.added}권${r.updated ? `, 갱신 ${r.updated}권` : ''}`); }
+  catch (err) { say('복원할 수 없어요: ' + err.message); }
+  e.target.value = '';
+};
 
 // ---------- 시작 ----------
 // 전체화면: 지원하는 환경(PC, iPad 등)에서만 버튼이 나타나요
