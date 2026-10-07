@@ -68,6 +68,32 @@ textarea{height:220px;resize:none}
 .carousel{flex:1;min-height:0;position:relative;display:flex;align-items:flex-start;gap:36%;overflow-x:auto;overflow-y:hidden;touch-action:pan-x;overscroll-behavior:contain;scroll-snap-type:x mandatory;padding:20px 25% 110px;-webkit-overflow-scrolling:touch}
 .slide{flex:0 0 100%;min-width:0;scroll-snap-align:center;cursor:pointer}
 .bigcover{width:100%;aspect-ratio:2/3;border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.25);background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;text-align:center;padding:12px;font-size:20px;line-height:1.3;word-break:keep-all}
+:root[data-acc="blue"]{--accent:#2f6fed;--accent-text:#fff}
+:root[data-acc="green"]{--accent:#1f9d55;--accent-text:#fff}
+:root[data-acc="purple"]{--accent:#7c4dff;--accent-text:#fff}
+:root[data-acc="orange"]{--accent:#e8710a;--accent-text:#fff}
+:root[data-acc="pink"]{--accent:#e0457b;--accent-text:#fff}
+@media(prefers-color-scheme:dark){:root[data-acc="blue"]:not([data-theme="light"]){--accent:#6ea0ff;--accent-text:#000}}
+:root[data-theme="dark"][data-acc="blue"]{--accent:#6ea0ff;--accent-text:#000}
+@media(prefers-color-scheme:dark){:root[data-acc="green"]:not([data-theme="light"]){--accent:#4cc27f;--accent-text:#000}}
+:root[data-theme="dark"][data-acc="green"]{--accent:#4cc27f;--accent-text:#000}
+@media(prefers-color-scheme:dark){:root[data-acc="purple"]:not([data-theme="light"]){--accent:#a98bff;--accent-text:#000}}
+:root[data-theme="dark"][data-acc="purple"]{--accent:#a98bff;--accent-text:#000}
+@media(prefers-color-scheme:dark){:root[data-acc="orange"]:not([data-theme="light"]){--accent:#ff9a42;--accent-text:#000}}
+:root[data-theme="dark"][data-acc="orange"]{--accent:#ff9a42;--accent-text:#000}
+@media(prefers-color-scheme:dark){:root[data-acc="pink"]:not([data-theme="light"]){--accent:#ff7aa6;--accent-text:#000}}
+:root[data-theme="dark"][data-acc="pink"]{--accent:#ff7aa6;--accent-text:#000}
+.grid{flex:1;min-height:0;display:grid;grid-template-columns:repeat(var(--cols,2),minmax(0,1fr));gap:20px 14px;align-content:start;overflow-y:auto;padding:16px 20px 110px}
+.grid .slide{flex:none}
+.grid .bigcover{font-size:14px;padding:8px}
+.grid .stitle{font-size:14px}.grid .edit2{font-size:18px;padding:0 4px}
+.grid .mvrow span{display:none}.grid .mvrow{justify-content:space-between}
+.grid .a{font-size:12px}.grid .sprog{margin-top:8px;font-size:11px}.grid .mvrow{margin-top:6px}
+body.dn-c .card{padding:8px;margin-bottom:8px;gap:10px;border-radius:14px}
+body.dn-c .cover{width:44px;height:64px;font-size:20px;border-radius:7px}
+body.dn-r .card{padding:18px;margin-bottom:16px;gap:18px}
+body.dn-r .cover{width:84px;height:122px;font-size:34px}
+.opt{display:flex;flex-direction:column;gap:2px;margin:6px 0 2px}.opt b{font-size:14px}
 .srow{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-top:14px}
 .stitle{font-size:18px;font-weight:600;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .edit2{flex:none;padding:2px 6px;font-size:22px;line-height:1;color:var(--sub)}
@@ -220,6 +246,10 @@ h3{margin:20px 0 8px;font-size:17px}
 <section id="more" class="view">
   <header><button class="back" id="moreBack">‹ 서재</button><b>더보기</b><span style="width:48px"></span></header>
   <div class="form">
+    <h3>모양</h3>
+    <div class="opt"><b>강조 색</b></div><div class="chips" id="uiAcc"></div>
+    <div class="opt"><b>서재 표지 크기</b><span class="note">큰 표지 보기에서 한 화면에 보이는 책 수</span></div><div class="chips" id="uiSize"></div>
+    <div class="opt"><b>목록 밀도</b><span class="note">목록 보기의 카드 크기</span></div><div class="chips" id="uiDens"></div>
     <h3>읽기 통계</h3><div id="statBox"></div>
     <h3>백업 · 복원</h3>
     <p class="note">책, 책장, 북마크, 형광펜·메모, 읽기 설정을 파일 하나로 저장해 두고, 기기를 바꾸거나 데이터가 지워졌을 때 다시 불러올 수 있어요. 책이 많으면 파일이 커요.</p>
@@ -371,6 +401,21 @@ function applyTheme(){
 }
 $('theme').onclick = () => { theme = isDark() ? 'light' : 'dark'; store.set('mybook:theme', theme); applyTheme(); };
 
+// ---------- 모양 설정: 강조 색 · 표지 크기 · 목록 밀도 ----------
+const UI_DEF = { acc: 'default', size: 'big', dens: 'normal' };
+let ui = { ...UI_DEF, ...(store.get('mybook:ui', null) || {}) };
+const UI_OPTS = { acc: [['default', '기본'], ['blue', '파랑'], ['green', '초록'], ['purple', '보라'], ['orange', '주황'], ['pink', '분홍']],
+  size: [['big', '크게(1권)'], ['mid', '보통(2권)'], ['small', '작게(3권)']], dens: [['compact', '촘촘하게'], ['normal', '보통'], ['roomy', '넓게']] };
+function applyUi() {
+  const de = document.documentElement;
+  if (ui.acc && ui.acc !== 'default') de.dataset.acc = ui.acc; else delete de.dataset.acc;
+  document.body.classList.toggle('dn-c', ui.dens === 'compact'); document.body.classList.toggle('dn-r', ui.dens === 'roomy');
+  [['uiAcc', 'acc'], ['uiSize', 'size'], ['uiDens', 'dens']].forEach(([id, k]) => { const el = $(id); if (!el) return;
+    el.innerHTML = UI_OPTS[k].map(([v, n]) => `<button data-uk="${k}" data-uv="${v}" class="${ui[k] === v ? 'on' : ''}">${n}</button>`).join(''); });
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-uk]'); if (!b) return;
+  ui[b.dataset.uk] = b.dataset.uv; store.set('mybook:ui', ui); applyUi(); renderHome(); });
+
 // ---------- 홈: 책 카드 목록 ----------
 let viewMode = store.get('mybook:view', 'cover'); // 'cover'(큰 표지) | 'list'(목록)
 let focusId = null; // 방금 만진 책: 화면을 다시 그린 뒤에도 그 책이 보이게
@@ -384,7 +429,8 @@ function shown() {
 }
 function renderHome(){
   renderTags(); const items = shown(), L = $('list'), big = viewMode === 'cover' && items.length > 0;
-  L.className = big ? 'carousel' : 'list';
+  const cols = big ? ({ mid: 2, small: 3 }[ui.size] || 0) : 0;
+  L.className = cols ? 'grid' : big ? 'carousel' : 'list'; if (cols) L.style.setProperty('--cols', cols);
   $('cnt').textContent = `${homeTab === 'all' ? '전체' : '읽고 있는 책'} ${items.length}권`;
   $('vCover').classList.toggle('on', viewMode === 'cover'); $('vList').classList.toggle('on', viewMode === 'list');
   L.innerHTML = !items.length ? (libQ || libTag ? '<div class="empty">조건에 맞는 책이 없어요.</div>' : homeTab === 'reading' && books.length ? '<div class="empty">읽고 있는 책이 없어요.<br>"전체"에서 책을 열어 읽으면 여기에 나타나요.</div>' : '<div class="empty">아직 책이 없어요.<br>오른쪽 위 + 버튼으로 추가해 보세요.</div>') : items.map((b, i, arr) => {
@@ -403,7 +449,7 @@ function renderHome(){
       <div class="info"><div class="t">${esc(b.title)}</div><div class="a">${esc(b.author)}</div>
       <div class="bar"><i style="width:${p}%"></i></div><div class="pct">${p}% 읽음</div></div>${mv}</div>`;
   }).join('');
-  if (big && focusId) { const el = L.querySelector(`[data-id="${focusId}"]`); // 보던 책을 가운데로
+  if (big && !cols && focusId) { const el = L.querySelector(`[data-id="${focusId}"]`); // 보던 책을 가운데로
     if (el) L.scrollLeft = el.offsetLeft - (L.clientWidth - el.offsetWidth) / 2; }
 }
 $('list').onclick = e => { const c = e.target.closest('.card,.slide'); if (!c) return;
@@ -1403,7 +1449,7 @@ $('moreBack').onclick = () => show('home');
 
 // ---------- 백업 · 복원 ----------
 function backupParts() { // 책이 커도 문자열 하나로 합치지 않고 조각 배열로 파일을 만들어요
-  const p = ['{"app":"mybook","v":1,"at":' + Date.now() + ',"rs":' + JSON.stringify(rs) + ',"stats":' + JSON.stringify(stats.days) + ',"shelves":' + JSON.stringify(shelves) + ',"books":['];
+  const p = ['{"app":"mybook","v":1,"at":' + Date.now() + ',"rs":' + JSON.stringify(rs) + ',"ui":' + JSON.stringify(ui) + ',"stats":' + JSON.stringify(stats.days) + ',"shelves":' + JSON.stringify(shelves) + ',"books":['];
   books.forEach((b, i) => p.push((i ? ',' : '') + JSON.stringify(b)));
   p.push(']}'); return p;
 }
@@ -1423,6 +1469,7 @@ async function restoreBackup(d) {
   renumber(); await Promise.all(books.map(saveMeta));
   (d.shelves || []).forEach(sh => { if (sh && sh.id && !shelfById(sh.id)) { shelves.push(sh); cloudShelf(sh); } }); saveShelves();
   if (d.rs) { rs = { ...RS_DEF, ...d.rs }; store.set('mybook:rs', rs); applyRS(); }
+  if (d.ui) { ui = { ...UI_DEF, ...d.ui }; store.set('mybook:ui', ui); applyUi(); }
   mergeStats(d.stats);
   return { added, updated };
 }
@@ -1445,7 +1492,7 @@ if (document.fullscreenEnabled || document.webkitFullscreenEnabled) {
              : (de.requestFullscreen || de.webkitRequestFullscreen).call(de); } catch (e) {}
   };
 }
-applyTheme(); applyMode(); $('sort').value = sortMode; show('home'); renderShelves();
+applyTheme(); applyMode(); applyUi(); $('sort').value = sortMode; show('home'); renderShelves();
 loadLocal().then(() => { renderHome(); renderShelves(); initCloud(); });
 navigator.storage?.persist?.();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
