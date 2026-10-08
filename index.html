@@ -170,6 +170,9 @@ body.rd{background:var(--rbg,var(--bg))}
 .scroll.page #wrap{height:100%;padding:var(--pt,28px) var(--px,24px) var(--pb,48px);column-count:1;column-gap:calc(var(--px,24px)*2);column-fill:auto}
 .hbtns{display:flex;align-items:center;gap:10px}
 .gear{font-size:24px;padding:4px 6px;color:var(--sub)}
+#home:not(.sq) #libQ,#home:not(.sq) #tagRow{display:none}
+.ibtn{padding:6px;color:var(--text);display:flex;align-items:center}
+.ibtn.on{color:var(--accent)}
 #libQ{-webkit-appearance:none;margin:0 20px 8px;width:calc(100% - 40px);padding:10px 14px;font-size:15px}
 .tagrow{display:flex;gap:8px;overflow-x:auto;padding:0 20px 8px;-webkit-overflow-scrolling:touch}
 .tagrow button{flex:none;padding:6px 12px;border-radius:14px;background:var(--card);font-size:13px;color:var(--sub)}
@@ -269,10 +272,10 @@ button:active{opacity:.7}
 
 <!-- 홈 화면 -->
 <section id="home" class="view active">
-  <header><h1>내 서재</h1><span class="hbtns"><button class="gear" aria-label="더보기">⚙︎</button><button class="round" id="addBtn" aria-label="책 추가">+</button></span></header>
+  <header><h1>내 서재</h1><span class="hbtns"><button class="ibtn" id="srchBtn" aria-label="검색"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></button><button class="gear" aria-label="더보기">⚙︎</button><button class="round" id="addBtn" aria-label="책 추가">+</button></span></header>
   <div id="homeTop">
-  <div class="seg"><button data-tab="reading">읽고 있는 책</button><button data-tab="shelves">책장</button><button data-tab="all">전체</button></div>
   <input id="libQ" type="search" placeholder="제목·저자·태그 검색"><div class="tagrow" id="tagRow"></div>
+  <div class="seg"><button data-tab="reading">읽고 있는 책</button><button data-tab="shelves">책장</button><button data-tab="all">전체</button></div>
   <div class="bar2"><span id="sync"></span><select id="sort" aria-label="정렬"><option value="manual">직접 정렬</option><option value="recent">최근 읽은 순</option><option value="title">제목 순</option><option value="progress">진행률 순</option></select></div>
   <div class="bar2" style="padding-bottom:6px"><b id="cnt" style="color:var(--text);font-size:15px"></b><span class="vt"><button id="selBtn">선택</button><button id="vCover" aria-label="큰 표지로 보기">▣</button><button id="vList" aria-label="목록으로 보기">☰</button></span></div>
   </div>
@@ -1446,6 +1449,8 @@ function renderTags() {
   $('tagRow').innerHTML = tags.length ? `<button data-t="" class="${libTag ? '' : 'on'}">전체</button>` + tags.map(t => `<button data-t="${esc(t)}" class="${t === libTag ? 'on' : ''}">#${esc(t)}</button>`).join('') : '';
 }
 $('tagRow').onclick = e => { const b = e.target.closest('button'); if (!b) return; libTag = b.dataset.t || null; renderHome(); };
+$('srchBtn').onclick = () => { const h = $('home'), on = !h.classList.contains('sq'); h.classList.toggle('sq', on); $('srchBtn').classList.toggle('on', on);
+  if (on) setTimeout(() => $('libQ').focus(), 50); else { libQ = ''; libTag = null; $('libQ').value = ''; renderHome(); } };
 $('libQ').oninput = e => { libQ = e.target.value.trim().toLowerCase(); renderHome(); };
 
 function updateSelBar() { document.body.classList.toggle('selm', selectMode); $('selBar2').classList.toggle('on', selectMode); $('selCnt').textContent = `${selSet.size}권 선택`; $('selBtn').textContent = selectMode ? '완료' : '선택'; }
