@@ -302,8 +302,13 @@ button:active{opacity:.7}
 </section>
 
 <!-- 더보기: 읽기 통계 + 백업/복원 -->
+<section id="stats" class="view">
+  <header><h1>통계</h1></header>
+  <div class="form"><div id="statBox"></div></div>
+</section>
+
 <section id="more" class="view">
-  <header><button class="back" id="moreBack">‹ 서재</button><b>더보기</b><span style="width:48px"></span></header>
+  <header><h1>설정</h1></header>
   <div class="form">
     <h3>숨긴 책</h3>
     <p class="note" id="hdNote"></p>
@@ -313,7 +318,6 @@ button:active{opacity:.7}
     <div class="opt"><b>강조 색</b></div><div class="chips" id="uiAcc"></div>
     <div class="opt"><b>서재 표지 크기</b><span class="note">큰 표지 보기에서 한 화면에 보이는 책 수</span></div><div class="chips" id="uiSize"></div>
     <div class="opt"><b>목록 밀도</b><span class="note">목록 보기의 카드 크기</span></div><div class="chips" id="uiDens"></div>
-    <h3>읽기 통계</h3><div id="statBox"></div>
     <h3>백업 · 복원</h3>
     <p class="note">책, 책장, 북마크, 형광펜·메모, 읽기 설정을 파일 하나로 저장해 두고, 기기를 바꾸거나 데이터가 지워졌을 때 다시 불러올 수 있어요. 책이 많으면 파일이 커요.</p>
     <div class="row"><button class="btn sub" id="bkMake" style="margin:0">백업 파일 만들기</button><label class="btn sub" for="bkFile" style="margin:0;text-align:center;cursor:pointer">백업에서 복원</label></div>
@@ -469,7 +473,7 @@ function show(id){
   if (id !== 'home' && selectMode) exitSelect();
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === id));
   document.body.classList.toggle('rd', id === 'reader');
-  document.body.classList.toggle('tb', ['home', 'shelves', 'shelf', 'more'].includes(id)); setTabbar(id);
+  document.body.classList.toggle('tb', ['home', 'shelves', 'shelf', 'more', 'stats'].includes(id)); setTabbar(id);
   document.querySelectorAll('.seg button').forEach(b => b.classList.toggle('on', b.dataset.tab === homeTab));
 }
 
@@ -1575,7 +1579,6 @@ function renderStats() {
     <div class="bars">${days7.map(x => `<div class="bc"><em>${Math.round(x.v / 60)}분</em><i style="height:${Math.max(3, x.v / mx * 90)}px"></i><u>${x.w}</u></div>`).join('')}</div>`;
 }
 document.querySelectorAll('.gear').forEach(g => g.onclick = () => { renderStats(); renderHidden(); $('bkStatus').textContent = ''; show('more'); });
-$('moreBack').onclick = () => show('home');
 
 // ---------- 백업 · 복원 ----------
 function backupParts() { // 책이 커도 문자열 하나로 합치지 않고 조각 배열로 파일을 만들어요
@@ -1614,17 +1617,16 @@ $('bkFile').onchange = async e => {
 
 // ---------- UI 개선 ----------
 // 하단 탭 바
-let moreTab = 'set';
 function setTabbar(id) {
-  const on = id === 'home' ? 'lib' : (id === 'shelves' || id === 'shelf') ? 'shelves' : id === 'more' ? moreTab : '';
+  const on = id === 'home' ? 'lib' : (id === 'shelves' || id === 'shelf') ? 'shelves' : id === 'stats' ? 'stats' : id === 'more' ? 'set' : '';
   document.querySelectorAll('#tabbar button').forEach(b => b.classList.toggle('on', b.dataset.t === on));
 }
 $('tabbar').onclick = e => { const b = e.target.closest('button'); if (!b) return; if (selectMode) { exitSelect(); }
   const t = b.dataset.t;
   if (t === 'lib') { if (homeTab === 'shelves') { homeTab = 'all'; store.set('mybook:htab', homeTab); } renderHome(); show('home'); }
   else if (t === 'shelves') { homeTab = 'shelves'; store.set('mybook:htab', homeTab); renderShelves(); show('shelves'); }
-  else { moreTab = t; renderStats(); renderHidden(); show('more');
-    setTimeout(() => { const f = $('more').querySelector('.form'); if (t === 'stats') $('statBox').scrollIntoView({ block: 'start' }); else f.scrollTop = 0; }, 0); }
+  else if (t === 'stats') { renderStats(); show('stats'); }
+  else { renderHidden(); $('bkStatus').textContent = ''; show('more'); }
 };
 
 // 표지 없는 책의 자동 표지
