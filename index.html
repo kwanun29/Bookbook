@@ -213,6 +213,8 @@ h3{margin:20px 0 8px;font-size:17px}
 
 /* ---- UI 개선: 하단 탭, 이어 읽기, 완독, 자동 표지, 접기, 전환 효과 ---- */
 .gear{display:none}
+.form,.list,.grid,#more,#stats{overscroll-behavior:none;-webkit-overflow-scrolling:auto}
+.form{overscroll-behavior-y:none}
 .carousel .slide>*:not(.ck){width:min(100%,max(120px,calc((100dvh - 480px)*2/3)));margin-left:auto;margin-right:auto}
 .carousel .slide>.srow,.carousel .slide>.mvrow{display:flex}
 .seg button[data-tab="shelves"]{display:none}
