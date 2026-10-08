@@ -253,6 +253,9 @@ button:active{opacity:.7}
 @media(prefers-reduced-motion:reduce){.view.active:not(#reader){animation:none}#homeTop{transition:none}}
 #posLbl{position:absolute;left:0;right:0;bottom:calc(8px + env(safe-area-inset-bottom,0px));text-align:center;font-size:11px;color:var(--rfg,var(--sub));opacity:.55;pointer-events:none;z-index:3}
 #reader.ui #posLbl{opacity:0}
+#reader.edm .rhead,#reader.edm .toolbar,#reader.edm #posLbl{opacity:0;pointer-events:none}
+#editDone{display:none;position:absolute;right:12px;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:7;background:var(--accent);color:var(--accent-text);border-radius:18px;padding:8px 14px;font-size:13px;font-weight:700;box-shadow:0 3px 10px rgba(0,0,0,.3)}
+#reader.edm #editDone{display:block}
 #actSheet,#introSheet{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);align-items:flex-end;justify-content:center;z-index:10}
 #actSheet.open,#introSheet.open{display:flex}
 #introSheet{align-items:center;padding:20px}
@@ -372,6 +375,7 @@ button:active{opacity:.7}
   <div class="scroll" id="scroll"><div id="wrap"><h2 id="bTitle"></h2><div id="body"></div><i id="padEnd"></i></div></div>
   <div id="dim"></div>
   <div id="posLbl"></div>
+  <button id="editDone">✓ 편집 종료</button>
   <button id="nextBar" hidden></button>
   <div class="toolbar">
     <div class="trow"><button id="pgLbl" aria-label="위치로 이동">0%</button><input type="range" class="rng" id="seek" min="0" max="1000" value="0" aria-label="읽은 위치"></div>
@@ -929,7 +933,7 @@ function openBook(id, from) {
   ratio = cur.progress || 0; cur.lastRead = Date.now(); lastAnchor = cur.pos ?? null;
   nextInfo = findNext(); $('nextBar').textContent = nextInfo ? '다음 책: ' + nextInfo.book.title + '  ▶' : '';
   $('bTitle').textContent = cur.title; paras = cur.content.split('\n\n'); renderBody();
-  editMode = false; $('body').classList.remove('editing'); $('editMode').classList.remove('on');
+  editMode = false; $('reader').classList.remove('edm'); $('body').classList.remove('editing'); $('editMode').classList.remove('on');
   applyRS(); applyMode(); closePanels(); sc.scrollLeft = 0; sc.scrollTop = 0;
   show('reader'); showUI(true, true);   // 처음엔 메뉴를 잠깐 보여주고 숨겨요
   requestAnimationFrame(() => { if (!(ratio > 0 && gotoAnchor(cur.pos))) restore(); updateBm(); });
@@ -1190,10 +1194,11 @@ $('rBack').onclick = () => { persist(true); closePanels(); renderHome(); renderS
 addEventListener('pagehide', persist);
 
 // ---------- 문단 편집: ✎ 버튼으로 편집 모드를 켜고, 고칠 문단을 누르면 편집 창이 열려요 ----------
+$('editDone').onclick = () => $('editMode').onclick();
 $('editMode').onclick = () => {
   editMode = !editMode;
   $('body').classList.toggle('editing', editMode);
-  $('editMode').classList.toggle('on', editMode);
+  $('editMode').classList.toggle('on', editMode); $('reader').classList.toggle('edm', editMode);
   showUI(true, !editMode);
 };
 let sheetI = null, sheetEl = null, editAnchor = null;
