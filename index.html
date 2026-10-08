@@ -207,6 +207,58 @@ h3{margin:20px 0 8px;font-size:17px}
 .hl{border-radius:3px;color:inherit}
 .hl0{background:rgba(255,224,102,.55)}.hl1{background:rgba(140,230,154,.5)}.hl2{background:rgba(130,190,255,.5)}.hl3{background:rgba(255,150,170,.5)}
 .hl.hm{text-decoration:underline dotted;text-underline-offset:3px}
+
+/* ---- UI 개선: 하단 탭, 이어 읽기, 완독, 자동 표지, 접기, 전환 효과 ---- */
+.gear{display:none}
+.carousel .slide>*:not(.ck){width:min(100%,max(120px,calc((100dvh - 545px)*2/3)));margin-left:auto;margin-right:auto}
+.carousel .slide>.srow,.carousel .slide>.mvrow{display:flex}
+.seg button[data-tab="shelves"]{display:none}
+#tabbar{display:none;position:fixed;left:0;right:0;bottom:0;z-index:6;justify-content:center;background:var(--bg);border-top:1px solid var(--border);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px))}
+body.tb #tabbar{display:flex}
+body.selm #tabbar{display:none}
+body.tb .view{padding-bottom:calc(58px + env(safe-area-inset-bottom,0px))}
+body.selm .view{padding-bottom:0}
+#tabbar button{flex:1;max-width:160px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;font-size:11px;font-weight:600;color:var(--sub)}
+#tabbar button.on{color:var(--text)}
+#tabbar svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#homeTop{overflow:hidden;max-height:600px;transition:max-height .25s ease,opacity .2s}
+#home.fold #homeTop{max-height:0;opacity:0;pointer-events:none}
+#resume{margin:0 20px 10px;display:flex;align-items:center;gap:12px;background:var(--card);border-radius:16px;padding:10px 14px 10px 10px;cursor:pointer}
+#resume[hidden]{display:none}
+#resume .rc{flex:none;width:44px;height:64px;border-radius:7px;background-size:cover;background-position:center;color:#fff;font-weight:700;font-size:20px;display:flex;align-items:center;justify-content:center}
+#resume .ri{flex:1;min-width:0}
+#resume .ri small{display:block;font-size:11px;color:var(--sub);margin-bottom:2px}
+#resume .ri b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#resume .ri em{font-style:normal;font-size:12px;color:var(--sub)}
+#resume .go{flex:none;background:var(--accent);color:var(--accent-text);border-radius:16px;padding:8px 14px;font-weight:700;font-size:13px}
+.bigcover,.cover{position:relative}
+.dnb{position:absolute;top:8px;right:8px;background:var(--accent);color:var(--accent-text);font-size:11px;font-weight:800;border-radius:10px;padding:3px 8px;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.dnb.sm{top:-4px;right:-4px;width:20px;height:20px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:12px}
+.ac{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;width:100%;height:100%;border:1.5px solid rgba(255,255,255,.55);border-radius:3px;padding:16px 8px 26px;position:relative;box-sizing:border-box}
+.ac i{width:28px;height:2px;background:rgba(255,255,255,.7);display:block;flex:none}
+.ac b{font-family:"Noto Serif KR","Nanum Myeongjo",Georgia,serif;line-height:1.3;word-break:keep-all;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden;text-shadow:0 1px 3px rgba(0,0,0,.35)}
+.ac em{font-style:normal;font-size:11px;opacity:.85;position:absolute;bottom:8px;left:6px;right:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.grid .ac b{font-size:13px!important}.grid .ac{gap:8px;padding:10px 6px 22px}
+.card,.slide{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;transition:transform .12s}
+.card:active,.slide:active{transform:scale(.98)}
+button:active{opacity:.7}
+.round:active,.btn:active{transform:scale(.95)}
+.view.active:not(#reader){animation:vin .22s ease}
+@keyframes vin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.view.active:not(#reader){animation:none}#homeTop{transition:none}}
+#posLbl{position:absolute;left:0;right:0;bottom:calc(8px + env(safe-area-inset-bottom,0px));text-align:center;font-size:11px;color:var(--rfg,var(--sub));opacity:.55;pointer-events:none;z-index:3}
+#reader.ui #posLbl{opacity:0}
+#actSheet,#introSheet{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);align-items:flex-end;justify-content:center;z-index:10}
+#actSheet.open,#introSheet.open{display:flex}
+#introSheet{align-items:center;padding:20px}
+#introSheet .sheet{border-radius:22px;max-width:380px;text-align:center;padding:26px 22px 20px}
+#introSheet h2{margin:0 0 10px;font-size:22px}#introSheet p{margin:0 0 18px;line-height:1.65;color:var(--sub);font-size:15px}
+.dots{display:flex;gap:6px;justify-content:center;margin-bottom:16px}.dots i{width:7px;height:7px;border-radius:50%;background:var(--border)}.dots i.on{background:var(--accent)}
+#actList{display:flex;flex-direction:column}
+#actList button{text-align:left;padding:14px 6px;font-size:16px;border-bottom:1px solid var(--border)}
+#actList button:last-child{border-bottom:0}
+#actList .dg{color:#d33}
+#actTitle{margin:0 0 6px;font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #selBar{display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(28px + env(safe-area-inset-bottom,0px));z-index:8;background:var(--card);border:1px solid var(--border);border-radius:22px;padding:8px 12px;gap:10px;align-items:center;box-shadow:0 6px 20px rgba(0,0,0,.3)}
 #selBar.on{display:flex}
 #selBar button[data-c]{width:30px;height:30px;border-radius:50%;border:1px solid rgba(0,0,0,.15)}
@@ -218,10 +270,13 @@ h3{margin:20px 0 8px;font-size:17px}
 <!-- 홈 화면 -->
 <section id="home" class="view active">
   <header><h1>내 서재</h1><span class="hbtns"><button class="gear" aria-label="더보기">⚙︎</button><button class="round" id="addBtn" aria-label="책 추가">+</button></span></header>
+  <div id="homeTop">
   <div class="seg"><button data-tab="reading">읽고 있는 책</button><button data-tab="shelves">책장</button><button data-tab="all">전체</button></div>
   <input id="libQ" type="search" placeholder="제목·저자·태그 검색"><div class="tagrow" id="tagRow"></div>
   <div class="bar2"><span id="sync"></span><select id="sort" aria-label="정렬"><option value="manual">직접 정렬</option><option value="recent">최근 읽은 순</option><option value="title">제목 순</option><option value="progress">진행률 순</option></select></div>
   <div class="bar2" style="padding-bottom:6px"><b id="cnt" style="color:var(--text);font-size:15px"></b><span class="vt"><button id="selBtn">선택</button><button id="vCover" aria-label="큰 표지로 보기">▣</button><button id="vList" aria-label="목록으로 보기">☰</button></span></div>
+  <div id="resume" hidden></div>
+  </div>
   <div class="list" id="list"></div>
 </section>
 
@@ -262,6 +317,8 @@ h3{margin:20px 0 8px;font-size:17px}
     <div class="row"><button class="btn sub" id="bkMake" style="margin:0">백업 파일 만들기</button><label class="btn sub" for="bkFile" style="margin:0;text-align:center;cursor:pointer">백업에서 복원</label></div>
     <input type="file" id="bkFile" accept=".json,application/json" hidden>
     <p class="status" id="bkStatus"></p>
+    <h3>도움말</h3>
+    <button class="btn sub" id="introAgain" style="margin:0 0 24px">사용법 다시 보기</button>
   </div>
 </section>
 
@@ -306,6 +363,7 @@ h3{margin:20px 0 8px;font-size:17px}
   <header class="rhead"><button class="back" id="rBack">‹ 서재</button><button class="back" id="fs" hidden>⛶ 전체화면</button><button class="back" id="bmBtn">☆ 북마크</button></header>
   <div class="scroll" id="scroll"><div id="wrap"><h2 id="bTitle"></h2><div id="body"></div><i id="padEnd"></i></div></div>
   <div id="dim"></div>
+  <div id="posLbl"></div>
   <button id="nextBar" hidden></button>
   <div class="toolbar">
     <div class="trow"><button id="pgLbl" aria-label="위치로 이동">0%</button><input type="range" class="rng" id="seek" min="0" max="1000" value="0" aria-label="읽은 위치"></div>
@@ -338,6 +396,8 @@ h3{margin:20px 0 8px;font-size:17px}
   <div id="setRows"></div>
   <div class="srow2"><label>글꼴</label></div><div class="chips" id="ffRow"></div>
   <div class="srow2"><label>문단 정렬</label></div><div class="chips" id="taRow"></div>
+  <div class="srow2"><label>하단 위치 표시</label></div><div class="chips" id="posRow"></div>
+  <div class="srow2"><label>페이지 넘김 효과 (페이지 모드)</label></div><div class="chips" id="fxRow"></div>
   <div class="srow2"><label>배경 색</label></div><div class="chips" id="bgRow"></div>
   <div class="row" style="margin-top:4px"><button class="btn sub" id="rsReset" style="margin:0">기본값</button><button class="btn sub" id="theme" aria-label="앱 다크모드 전환" style="margin:0"></button><button class="btn main" id="setDone" style="margin:0">완료</button></div>
 </div></div>
@@ -365,6 +425,16 @@ h3{margin:20px 0 8px;font-size:17px}
 <!-- 서재 선택 모드 바 / 텍스트 선택 시 형광펜 바 -->
 <div id="selBar2"><span id="selCnt"></span><button id="sbMerge">병합</button><button id="sbTag">태그</button><button id="sbHide">숨김</button><button id="sbDel" style="color:#d33">삭제</button><button id="sbX">취소</button></div>
 <div id="selBar"><button data-c="0" style="background:#ffe066" aria-label="노랑"></button><button data-c="1" style="background:#8ce69a" aria-label="초록"></button><button data-c="2" style="background:#82beff" aria-label="파랑"></button><button data-c="3" style="background:#ff96aa" aria-label="분홍"></button><button id="sbMemo">📝 메모</button></div>
+
+<nav id="tabbar" aria-label="메뉴">
+  <button data-t="lib"><svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4z"/><path d="M5 17a3 3 0 0 1 3-3h11"/></svg>서재</button>
+  <button data-t="shelves"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="16" rx="1"/><rect x="12" y="4" width="3.5" height="16" rx="1"/><path d="M17.5 6.5l3 .8-3.2 12.4-3-.8"/></svg>책장</button>
+  <button data-t="stats"><svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>통계</button>
+  <button data-t="set"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>설정</button>
+</nav>
+<div id="actSheet"><div class="sheet"><p id="actTitle"></p><div id="actList"></div></div></div>
+<div id="introSheet"><div class="sheet"><h2 id="inT"></h2><p id="inP"></p><div class="dots" id="inD"></div>
+  <div class="row"><button class="btn sub" id="inSkip" style="margin:0">건너뛰기</button><button class="btn main" id="inNext" style="margin:0">다음</button></div></div></div>
 
 <!-- 문단 편집 시트 -->
 <div id="sheet"><div class="sheet">
@@ -397,6 +467,7 @@ function show(id){
   if (id !== 'home' && selectMode) exitSelect();
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === id));
   document.body.classList.toggle('rd', id === 'reader');
+  document.body.classList.toggle('tb', ['home', 'shelves', 'shelf', 'more'].includes(id)); setTabbar(id);
   document.querySelectorAll('.seg button').forEach(b => b.classList.toggle('on', b.dataset.tab === homeTab));
 }
 
@@ -466,7 +537,7 @@ function shown() {
   return v;
 }
 function renderHome(){
-  renderTags(); const items = shown(), L = $('list'), big = viewMode === 'cover' && items.length > 0;
+  $('home').classList.remove('fold'); renderTags(); const items = shown(), L = $('list'), big = viewMode === 'cover' && items.length > 0;
   const cols = big ? ({ mid: 2, small: 3 }[ui.size] || 0) : 0;
   L.className = cols ? 'grid' : big ? 'carousel' : 'list'; if (cols) L.style.setProperty('--cols', cols);
   $('cnt').textContent = `${homeTab === 'all' ? '전체' : '읽고 있는 책'} ${items.length}권`;
@@ -474,23 +545,24 @@ function renderHome(){
   L.innerHTML = !items.length ? (libQ || libTag ? '<div class="empty">조건에 맞는 책이 없어요.</div>' : homeTab === 'reading' && books.length ? '<div class="empty">읽고 있는 책이 없어요.<br>"전체"에서 책을 열어 읽으면 여기에 나타나요.</div>' : '<div class="empty">아직 책이 없어요.<br>오른쪽 위 + 버튼으로 추가해 보세요.</div>') : items.map((b, i, arr) => {
     const p = Math.round((b.progress || 0) * 100), manual = sortMode === 'manual';
     const vis = (up) => `style="visibility:${(up ? i > 0 : i < arr.length - 1) ? 'visible' : 'hidden'}"`;
-    const bg = `background-color:${b.color};${b.cover ? `background-image:url(${b.cover})` : ''}`;
+    const bg = `background-color:${b.color};${b.cover ? `background-image:url(${b.cover})` : 'background-image:linear-gradient(155deg,rgba(255,255,255,.22),rgba(0,0,0,.3))'}`;
     if (big) return `<div class="slide${selSet.has(b.id) ? ' picked' : ''}" data-id="${b.id}" role="button" tabindex="0">
-      <div class="bigcover" style="${bg}">${b.cover ? '' : esc(b.title)}</div>${selectMode ? '<span class="ck"></span>' : ''}
+      <div class="bigcover" style="${bg}">${b.cover ? '' : autoCov(b)}${p >= 99 ? '<span class="dnb">✓ 완독</span>' : ''}</div>${selectMode ? '<span class="ck"></span>' : ''}
       <div class="srow"><div class="stitle">${esc(b.title)}</div><button class="edit2" aria-label="편집">⋮</button></div>
       <div class="a">${esc(b.author)}</div>
-      <div class="sprog"><div class="bar"><i style="width:${p}%"></i></div><span>${p}%</span></div>
+      <div class="sprog"><div class="bar"><i style="width:${p}%"></i></div><span>${p >= 99 ? '완독' : p + '%'}</span></div>
       ${manual ? `<div class="mvrow"><button class="up" ${vis(true)} aria-label="앞으로">◀</button><span>순서 이동</span><button class="dn" ${vis(false)} aria-label="뒤로">▶</button></div>` : ''}</div>`;
     const mv = manual ? `<div class="mv"><button class="up" ${vis(true)} aria-label="위로">▲</button><button class="dn" ${vis(false)} aria-label="아래로">▼</button></div>` : '';
     return `<div class="card${selSet.has(b.id) ? ' picked' : ''}" data-id="${b.id}" role="button" tabindex="0">${selectMode ? '<span class="ck"></span>' : ''}<button class="edit" aria-label="편집">✎</button>
-      <div class="cover" style="${bg}">${b.cover ? '' : esc(b.title.charAt(0))}</div>
+      <div class="cover" style="${bg}">${b.cover ? '' : esc(b.title.charAt(0))}${p >= 99 ? '<span class="dnb sm">✓</span>' : ''}</div>
       <div class="info"><div class="t">${esc(b.title)}</div><div class="a">${esc(b.author)}</div>
-      <div class="bar"><i style="width:${p}%"></i></div><div class="pct">${p}% 읽음</div></div>${mv}</div>`;
+      <div class="bar"><i style="width:${p}%"></i></div><div class="pct">${p >= 99 ? '완독' : p + '% 읽음'}</div></div>${mv}</div>`;
   }).join('');
   if (big && !cols && focusId) { const el = L.querySelector(`[data-id="${focusId}"]`); // 보던 책을 가운데로
     if (el) L.scrollLeft = el.offsetLeft - (L.clientWidth - el.offsetWidth) / 2; }
+  renderResume();
 }
-$('list').onclick = e => { const c = e.target.closest('.card,.slide'); if (!c) return;
+$('list').onclick = e => { if (lpFired) { lpFired = false; return; } const c = e.target.closest('.card,.slide'); if (!c) return;
   const id = c.dataset.id; focusId = id;
   if (selectMode) { if (selSet.has(id)) selSet.delete(id); else selSet.add(id); renderHome(); updateSelBar(); return; }
   if (e.target.closest('.edit,.edit2')) openEdit(id);
@@ -723,7 +795,7 @@ const sc = $('scroll');
 const readerActive = () => $('reader').classList.contains('active');
 
 // ---- 읽기 설정: 글자 크기, 줄간격, 여백, 문단 간격, 정렬, 글꼴, 배경, 밝기 ----
-const RS_DEF = { fs: 18, lh: 1.7, pg: 1, px: 24, pt: 28, pb: 48, ta: 'left', ff: 'sans', bg: 'auto', br: 100 };
+const RS_DEF = { fs: 18, lh: 1.7, pg: 1, px: 24, pt: 28, pb: 48, ta: 'left', ff: 'sans', bg: 'auto', br: 100, ps: 'off', fx: 'slide' };
 let rs = { ...RS_DEF, ...(store.get('mybook:rs', null) || { fs: store.get('mybook:font', 18) }) };
 const FONTS = {
   sans: '-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif',
@@ -751,9 +823,13 @@ function buildSet() {
     k === 'br' ? `<div class="srow2"><label>${n}</label><input type="range" class="rng" data-k="${k}" min="${min}" max="${max}" step="${step}" value="${rs[k]}"><span data-v="${k}">${FMT[k](rs[k])}</span></div>`
       : `<div class="srow2"><label>${n}</label><div class="stp"><button data-st="${k}" data-d="-1" aria-label="${n} 줄이기">−</button><span class="sv" data-v="${k}">${FMT[k](rs[k])}</span><button data-st="${k}" data-d="1" aria-label="${n} 늘리기">+</button></div></div>`).join('');
   $('ffRow').innerHTML = Object.entries(FNAME).map(([k, n]) => `<button data-ff="${k}" style="font-family:${FONTS[k]}">${n}</button>`).join('');
+  $('posRow').innerHTML = [['off', '끄기'], ['num', '쪽수'], ['pct', '퍼센트']].map(([k, n]) => `<button data-ps="${k}">${n}</button>`).join('');
+  $('fxRow').innerHTML = [['slide', '밀기'], ['fade', '페이드'], ['none', '없음']].map(([k, n]) => `<button data-fx="${k}">${n}</button>`).join('');
   $('taRow').innerHTML = [['left', '왼쪽'], ['justify', '양쪽'], ['center', '가운데']].map(([k, n]) => `<button data-ta="${k}">${n}</button>`).join('');
   $('bgRow').innerHTML = Object.entries(BGS).map(([k, v]) => `<button class="sw" data-bg="${k}" aria-label="${v.n}" style="background:${v.bg || 'linear-gradient(135deg,#fff 50%,#111 50%)'}"></button>`).join('');
   $('setp').querySelectorAll('[data-ff]').forEach(b => b.classList.toggle('on', b.dataset.ff === rs.ff));
+  $('setp').querySelectorAll('[data-ps]').forEach(b => b.classList.toggle('on', b.dataset.ps === rs.ps));
+  $('setp').querySelectorAll('[data-fx]').forEach(b => b.classList.toggle('on', b.dataset.fx === rs.fx));
   $('setp').querySelectorAll('[data-ta]').forEach(b => b.classList.toggle('on', b.dataset.ta === rs.ta));
   $('setp').querySelectorAll('[data-bg]').forEach(b => b.classList.toggle('on', b.dataset.bg === rs.bg));
 }
@@ -774,6 +850,7 @@ function showPct() {
   const p = Math.round(ratio * 100);
   if (mode === 'page') { const { w, pages } = pageInfo(); $('pgLbl').textContent = (Math.round(sc.scrollLeft / w) + 1) + ' / ' + pages; }
   else $('pgLbl').textContent = p + '%';
+  $('posLbl').textContent = rs.ps === 'off' ? '' : rs.ps === 'pct' ? p + '%' : $('pgLbl').textContent;
   let atEnd = false;
   if (mode === 'page') { const { w, pages } = pageInfo(); atEnd = Math.round(sc.scrollLeft / w) >= pages - 1; }
   else atEnd = sc.scrollHeight - sc.clientHeight - sc.scrollTop <= 24;
@@ -832,7 +909,9 @@ function showUI(v, auto) { // 메뉴 보이기/숨기기 (auto: 잠시 뒤 자�
 }
 function turn(d) {       // 페이지 넘기기
   const { w, pages } = pageInfo(), i = Math.min(pages - 1, Math.max(0, Math.round(sc.scrollLeft / w) + d));
-  sc.scrollTo({ left: i * w, behavior: 'smooth' });
+  if (rs.fx === 'fade') { const wr = $('wrap'); wr.style.transition = 'opacity .14s'; wr.style.opacity = '0';
+    setTimeout(() => { sc.scrollTo({ left: i * w, behavior: 'auto' }); wr.style.opacity = '1'; }, 140); }
+  else sc.scrollTo({ left: i * w, behavior: rs.fx === 'none' ? 'auto' : 'smooth' });
 }
 const closePanels = () => { $('setp').classList.remove('open'); $('panel').classList.remove('open'); };
 let backTo = 'home';
@@ -938,6 +1017,8 @@ $('setp').addEventListener('input', e => {
 });
 $('setp').addEventListener('change', e => { if (!e.target.dataset.k) return; setAnchor = null; store.set('mybook:rs', rs); afterJump(); });
 $('setp').addEventListener('click', e => {
+  const op = e.target.closest('[data-ps],[data-fx]');
+  if (op) { if (op.dataset.ps) rs.ps = op.dataset.ps; else rs.fx = op.dataset.fx; store.set('mybook:rs', rs); buildSet(); showPct(); return; }
   const st = e.target.closest('[data-st]');
   if (st) { const k = st.dataset.st, row = SET_ROWS.find(r => r[0] === k), s = row[4], dec = s < 1 ? 1 : 0;
     const v = Math.min(row[3], Math.max(row[2], +((+rs[k]) + s * (+st.dataset.d)).toFixed(dec)));
@@ -1368,7 +1449,7 @@ function renderTags() {
 $('tagRow').onclick = e => { const b = e.target.closest('button'); if (!b) return; libTag = b.dataset.t || null; renderHome(); };
 $('libQ').oninput = e => { libQ = e.target.value.trim().toLowerCase(); renderHome(); };
 
-function updateSelBar() { $('selBar2').classList.toggle('on', selectMode); $('selCnt').textContent = `${selSet.size}권 선택`; $('selBtn').textContent = selectMode ? '완료' : '선택'; }
+function updateSelBar() { document.body.classList.toggle('selm', selectMode); $('selBar2').classList.toggle('on', selectMode); $('selCnt').textContent = `${selSet.size}권 선택`; $('selBtn').textContent = selectMode ? '완료' : '선택'; }
 function exitSelect() { selectMode = false; selSet.clear(); updateSelBar(); }
 $('selBtn').onclick = () => { if (selectMode) exitSelect(); else { selectMode = true; selSet.clear(); updateSelBar(); } renderHome(); };
 $('sbX').onclick = () => { exitSelect(); renderHome(); };
@@ -1526,6 +1607,97 @@ $('bkFile').onchange = async e => {
   e.target.value = '';
 };
 
+
+// ---------- UI 개선 ----------
+// 하단 탭 바
+let moreTab = 'set';
+function setTabbar(id) {
+  const on = id === 'home' ? 'lib' : (id === 'shelves' || id === 'shelf') ? 'shelves' : id === 'more' ? moreTab : '';
+  document.querySelectorAll('#tabbar button').forEach(b => b.classList.toggle('on', b.dataset.t === on));
+}
+$('tabbar').onclick = e => { const b = e.target.closest('button'); if (!b) return; if (selectMode) { exitSelect(); }
+  const t = b.dataset.t;
+  if (t === 'lib') { if (homeTab === 'shelves') { homeTab = 'all'; store.set('mybook:htab', homeTab); } renderHome(); show('home'); }
+  else if (t === 'shelves') { homeTab = 'shelves'; store.set('mybook:htab', homeTab); renderShelves(); show('shelves'); }
+  else { moreTab = t; renderStats(); renderHidden(); show('more');
+    setTimeout(() => { const f = $('more').querySelector('.form'); if (t === 'stats') $('statBox').scrollIntoView({ block: 'start' }); else f.scrollTop = 0; }, 0); }
+};
+
+// 이어 읽기 카드
+function renderResume() {
+  const el = $('resume'); if (!el) return;
+  const c = books.filter(b => vis(b) && (b.progress || 0) > 0 && (b.progress || 0) < 0.99).sort((a, b) => (b.lastRead || 0) - (a.lastRead || 0))[0];
+  const ok = c && homeTab !== 'shelves' && !selectMode && !libQ && !libTag;
+  el.hidden = !ok; if (!ok) { el.dataset.id = ''; return; }
+  el.dataset.id = c.id;
+  el.innerHTML = `<div class="rc" style="${coverStyle(c)}">${c.cover ? '' : esc(c.title.charAt(0))}</div><div class="ri"><small>이어 읽기</small><b>${esc(c.title)}</b><em>${Math.round((c.progress || 0) * 100)}% 읽음</em></div><span class="go">▶ 이어서</span>`;
+}
+$('resume').onclick = () => { const id = $('resume').dataset.id; if (id) openBook(id, 'home'); };
+
+// 표지 없는 책의 자동 표지
+const autoCov = b => { const n = [...b.title].length, fs = n <= 8 ? 22 : n <= 16 ? 18 : n <= 30 ? 15 : 12;
+  return `<div class="ac"><i></i><b style="font-size:${fs}px">${esc(b.title)}</b><i></i>${b.author && b.author !== '작자 미상' ? `<em>${esc(b.author)}</em>` : ''}</div>`; };
+
+// 서재 상단 접기 (아래로 스크롤하면 접히고, 위로 올리면 다시 나타나요)
+{ const lst = $('list'); let lastSt = 0, lock = 0;
+  lst.addEventListener('scroll', () => { const st = lst.scrollTop, d = st - lastSt; lastSt = st; if (Date.now() < lock) return;
+    const h = $('home'), fold = h.classList.contains('fold');
+    if (!fold && st > 80 && d > 4 && lst.scrollHeight - lst.clientHeight > 260) { h.classList.add('fold'); lock = Date.now() + 450; }
+    else if (fold && (d < -4 || st < 10)) { h.classList.remove('fold'); lock = Date.now() + 450; } }, { passive: true }); }
+
+// 책을 길게 누르면 메뉴
+let actAt = 0, lpTimer = null, lpFired = false, lpX = 0, lpY = 0, actId = null;
+const lpCancel = () => { clearTimeout(lpTimer); lpTimer = null; };
+$('list').addEventListener('pointerdown', e => {
+  const c = e.target.closest('.card,.slide'); if (!c || selectMode || e.target.closest('.edit,.edit2,.up,.dn,.mvrow')) return;
+  lpX = e.clientX; lpY = e.clientY; lpFired = false; lpCancel();
+  lpTimer = setTimeout(() => { lpTimer = null; lpFired = true; setTimeout(() => { lpFired = false; }, 800); try { navigator.vibrate && navigator.vibrate(12); } catch (x) {} openAct(c.dataset.id); }, 550);
+});
+$('list').addEventListener('pointermove', e => { if (lpTimer && (Math.abs(e.clientX - lpX) > 10 || Math.abs(e.clientY - lpY) > 10)) lpCancel(); });
+['pointerup', 'pointercancel', 'pointerleave', 'scroll'].forEach(t => $('list').addEventListener(t, lpCancel, true));
+$('list').addEventListener('contextmenu', e => e.preventDefault());
+function openAct(id, shelfMode) {
+  const b = bookById(id); if (!b) return; actId = id; $('actTitle').textContent = b.title;
+  if (shelfMode) {
+    const hs = shelves.filter(s => !s.bookIds.includes(id));
+    $('actList').innerHTML = (hs.length ? hs.map(s => `<button data-sh="${s.id}">${esc(s.name)}</button>`).join('') : '<p style="color:var(--sub);margin:12px 4px">담을 수 있는 책장이 없어요.<br>책장 탭에서 먼저 책장을 만들어 주세요.</p>') + '<button data-a="back">‹ 뒤로</button>';
+  } else {
+    $('actList').innerHTML = [['edit', '정보 수정'], ['hide', b.hidden ? '숨김 해제' : '서재에서 숨기기'], ['tag', '태그 추가'], ['shelf', '책장에 담기'], ['select', '여러 권 선택'], ['del', '삭제', 'dg'], ['x', '닫기']]
+      .map(([a, n, c]) => `<button data-a="${a}"${c ? ` class="${c}"` : ''}>${n}</button>`).join('');
+  }
+  actAt = Date.now(); $('actSheet').classList.add('open');
+}
+const closeAct = () => $('actSheet').classList.remove('open');
+$('actSheet').onclick = async e => {
+  if (Date.now() - actAt < 450) return; // 손가락을 떼는 순간의 클릭으로 바로 닫히지 않게
+  if (e.target === $('actSheet')) { closeAct(); return; }
+  const b = e.target.closest('button'); if (!b) return; const id = actId, bk = bookById(id);
+  if (b.dataset.sh) { const sh = shelfById(b.dataset.sh); if (sh && !sh.bookIds.includes(id)) { sh.bookIds.push(id); saveShelves(); cloudShelf(sh); renderShelves(); } closeAct(); return; }
+  const a = b.dataset.a; if (!a) return;
+  if (a === 'back') { openAct(id); return; }
+  if (a === 'shelf') { openAct(id, true); return; }
+  closeAct(); if (!bk || a === 'x') return;
+  if (a === 'edit') openEdit(id);
+  else if (a === 'hide') { bk.hidden = !bk.hidden; bk.xd = true; await saveMeta(bk); cloudSave(bk, false); renderHome(); renderShelves(); renderHidden(); }
+  else if (a === 'tag') { selSet.clear(); selSet.add(id); await $('sbTag').onclick(); selSet.clear(); renderHome(); }
+  else if (a === 'select') { selectMode = true; selSet.clear(); selSet.add(id); updateSelBar(); renderHome(); }
+  else if (a === 'del') { selSet.clear(); selSet.add(id); await $('sbDel').onclick(); selSet.clear(); renderHome(); }
+};
+
+// 첫 실행 안내
+const INTRO = [['책 넣기', '오른쪽 위 + 버튼으로 EPUB·TXT 파일을 추가해요.\n여러 개를 한꺼번에 골라도 되고, 제목은 본문 첫 줄에서 자동으로 만들어져요.'],
+  ['읽기', '화면 가운데를 누르면 메뉴가, 왼쪽·오른쪽을 누르면 페이지가 넘어가요.\nAa에서 글꼴·색·여백을 바꾸고, 글을 길게 눌러 형광펜과 메모를 남겨요.'],
+  ['내 책 지키기', '책은 이 기기(또는 로그인한 계정)에 저장돼요.\n아래 설정 탭에서 백업 파일을 가끔 만들어 두면 안전해요. 책이 많아지면 책장·태그·숨기기로 정리하세요.']];
+let inI = 0;
+function paintIntro() { $('inT').textContent = INTRO[inI][0]; $('inP').textContent = INTRO[inI][1]; $('inP').style.whiteSpace = 'pre-line';
+  $('inD').innerHTML = INTRO.map((_, i) => `<i class="${i === inI ? 'on' : ''}"></i>`).join(''); $('inNext').textContent = inI === INTRO.length - 1 ? '시작하기' : '다음'; }
+function showIntro() { inI = 0; paintIntro(); $('introSheet').classList.add('open'); }
+function endIntro() { $('introSheet').classList.remove('open'); store.set('mybook:intro', 1); }
+$('inNext').onclick = () => { if (inI >= INTRO.length - 1) endIntro(); else { inI++; paintIntro(); } };
+$('inSkip').onclick = endIntro;
+$('introAgain').onclick = showIntro;
+const maybeIntro = () => { if (!books.length && !store.get('mybook:intro', 0)) showIntro(); };
+
 // ---------- 시작 ----------
 // 전체화면: 지원하는 환경(PC, iPad 등)에서만 버튼이 나타나요
 const de = document.documentElement;
@@ -1538,7 +1710,7 @@ if (document.fullscreenEnabled || document.webkitFullscreenEnabled) {
   };
 }
 applyTheme(); applyMode(); applyUi(); $('sort').value = sortMode; show('home'); renderShelves();
-loadLocal().then(() => { renderHome(); renderShelves(); initCloud(); });
+loadLocal().then(() => { renderHome(); renderShelves(); initCloud().catch(() => {}).then(maybeIntro); });
 navigator.storage?.persist?.();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
