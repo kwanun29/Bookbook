@@ -210,7 +210,7 @@ h3{margin:20px 0 8px;font-size:17px}
 
 /* ---- UI 개선: 하단 탭, 이어 읽기, 완독, 자동 표지, 접기, 전환 효과 ---- */
 .gear{display:none}
-.carousel .slide>*:not(.ck){width:min(100%,max(120px,calc((100dvh - 545px)*2/3)));margin-left:auto;margin-right:auto}
+.carousel .slide>*:not(.ck){width:min(100%,max(120px,calc((100dvh - 480px)*2/3)));margin-left:auto;margin-right:auto}
 .carousel .slide>.srow,.carousel .slide>.mvrow{display:flex}
 .seg button[data-tab="shelves"]{display:none}
 #tabbar{display:none;position:fixed;left:0;right:0;bottom:0;z-index:6;justify-content:center;background:var(--bg);border-top:1px solid var(--border);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px))}
@@ -275,7 +275,6 @@ button:active{opacity:.7}
   <input id="libQ" type="search" placeholder="제목·저자·태그 검색"><div class="tagrow" id="tagRow"></div>
   <div class="bar2"><span id="sync"></span><select id="sort" aria-label="정렬"><option value="manual">직접 정렬</option><option value="recent">최근 읽은 순</option><option value="title">제목 순</option><option value="progress">진행률 순</option></select></div>
   <div class="bar2" style="padding-bottom:6px"><b id="cnt" style="color:var(--text);font-size:15px"></b><span class="vt"><button id="selBtn">선택</button><button id="vCover" aria-label="큰 표지로 보기">▣</button><button id="vList" aria-label="목록으로 보기">☰</button></span></div>
-  <div id="resume" hidden></div>
   </div>
   <div class="list" id="list"></div>
 </section>
@@ -360,7 +359,7 @@ button:active{opacity:.7}
 
 <!-- 읽기 화면 -->
 <section id="reader" class="view">
-  <header class="rhead"><button class="back" id="rBack">‹ 서재</button><button class="back" id="fs" hidden>⛶ 전체화면</button><button class="back" id="bmBtn">☆ 북마크</button></header>
+  <header class="rhead"><button class="back" id="rBack">‹ 서재</button><button class="back" id="fs" hidden>⛶ 전체화면</button><button class="back" id="bmBtn"><svg viewBox="0 0 24 24" width="16" height="16" style="vertical-align:-2px;margin-right:4px;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg>북마크</button></header>
   <div class="scroll" id="scroll"><div id="wrap"><h2 id="bTitle"></h2><div id="body"></div><i id="padEnd"></i></div></div>
   <div id="dim"></div>
   <div id="posLbl"></div>
@@ -560,7 +559,6 @@ function renderHome(){
   }).join('');
   if (big && !cols && focusId) { const el = L.querySelector(`[data-id="${focusId}"]`); // 보던 책을 가운데로
     if (el) L.scrollLeft = el.offsetLeft - (L.clientWidth - el.offsetWidth) / 2; }
-  renderResume();
 }
 $('list').onclick = e => { if (lpFired) { lpFired = false; return; } const c = e.target.closest('.card,.slide'); if (!c) return;
   const id = c.dataset.id; focusId = id;
@@ -899,7 +897,8 @@ function gotoAnchor(a) { // 문단 번호 a가 있는 위치로 이동 (없으�
   syncRatio();
   return true;
 }
-function updateBm() { if (cur) $('bmBtn').textContent = (cur.bookmarks || []).some(b => b.p === lastAnchor) ? '★ 북마크' : '☆ 북마크'; }
+const BM_ICO = fill => `<svg viewBox="0 0 24 24" width="16" height="16" style="vertical-align:-2px;margin-right:4px;fill:${fill};stroke:currentColor;stroke-width:2;stroke-linejoin:round"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg>`;
+function updateBm() { if (cur) $('bmBtn').innerHTML = BM_ICO((cur.bookmarks || []).some(b => b.p === lastAnchor) ? 'currentColor' : 'none') + '북마크'; }
 function afterJump() { syncRatio(); persist(); updateBm(); }
 
 function applyMode() { sc.classList.toggle('page', mode === 'page'); if (mode === 'page') sc.scrollTop = 0; $('modeBtn').textContent = mode === 'page' ? '페이지' : '스크롤'; }
@@ -1042,7 +1041,7 @@ const pctOf = i => Math.round(i / Math.max(1, paras.length - 1) * 100);
 function renderBm() {
   const bms = [...(cur.bookmarks || [])].sort((x, y) => x.p - y.p);
   $('bmList').innerHTML = bms.length ? bms.map(b => `<div class="bmi" data-p="${b.p}"><div class="bt">${esc(b.t || '(빈 문단)')}</div><div class="bs">${pctOf(b.p)}%</div><button class="bdel" aria-label="삭제">✕</button></div>`).join('')
-    : '<div class="empty" style="margin-top:24px">북마크가 없어요.<br>읽는 중 위쪽의 ☆ 북마크 버튼으로 추가해요.</div>';
+    : '<div class="empty" style="margin-top:24px">북마크가 없어요.<br>읽는 중 위쪽의 북마크 버튼으로 추가해요.</div>';
 }
 let lastPanelTab = 'toc';
 function panelTab(t) {
@@ -1622,17 +1621,6 @@ $('tabbar').onclick = e => { const b = e.target.closest('button'); if (!b) retur
   else { moreTab = t; renderStats(); renderHidden(); show('more');
     setTimeout(() => { const f = $('more').querySelector('.form'); if (t === 'stats') $('statBox').scrollIntoView({ block: 'start' }); else f.scrollTop = 0; }, 0); }
 };
-
-// 이어 읽기 카드
-function renderResume() {
-  const el = $('resume'); if (!el) return;
-  const c = books.filter(b => vis(b) && (b.progress || 0) > 0 && (b.progress || 0) < 0.99).sort((a, b) => (b.lastRead || 0) - (a.lastRead || 0))[0];
-  const ok = c && homeTab !== 'shelves' && !selectMode && !libQ && !libTag;
-  el.hidden = !ok; if (!ok) { el.dataset.id = ''; return; }
-  el.dataset.id = c.id;
-  el.innerHTML = `<div class="rc" style="${coverStyle(c)}">${c.cover ? '' : esc(c.title.charAt(0))}</div><div class="ri"><small>이어 읽기</small><b>${esc(c.title)}</b><em>${Math.round((c.progress || 0) * 100)}% 읽음</em></div><span class="go">▶ 이어서</span>`;
-}
-$('resume').onclick = () => { const id = $('resume').dataset.id; if (id) openBook(id, 'home'); };
 
 // 표지 없는 책의 자동 표지
 const autoCov = b => { const n = [...b.title].length, fs = n <= 8 ? 22 : n <= 16 ? 18 : n <= 30 ? 15 : 12;
