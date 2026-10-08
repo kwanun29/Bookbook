@@ -101,8 +101,8 @@ body.dn-r .cover{width:84px;height:122px;font-size:34px}
 .edit2{flex:none;padding:2px 6px;font-size:22px;line-height:1;color:var(--sub)}
 .sprog{display:flex;align-items:center;gap:10px;margin-top:16px;font-size:13px}
 .sprog .bar{flex:1;margin-top:0}
-.mvrow{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:12px;color:var(--sub)}
-.mvrow button{padding:6px 14px;font-size:16px;color:var(--text)}
+.mvrow{display:flex;justify-content:space-between;align-items:center;margin-top:2px;font-size:12px;color:var(--sub)}
+.mvrow button{padding:4px 14px;font-size:16px;color:var(--text)}
 .vt button{padding:4px 8px;font-size:22px;color:var(--sub);opacity:.45}
 .vt button.on{opacity:1;color:var(--text)}
 .back{font-size:16px;padding:6px 0}
@@ -217,7 +217,7 @@ h3{margin:20px 0 8px;font-size:17px}
 .gear{display:none}
 .form,.list,.grid,#more,#stats{overscroll-behavior:none;-webkit-overflow-scrolling:auto}
 .form{overscroll-behavior-y:none}
-.carousel .slide>*:not(.ck){width:min(100%,max(120px,calc((100dvh - 480px)*2/3)));margin-left:auto;margin-right:auto}
+.carousel .slide>*:not(.ck){width:min(100%,max(120px,calc((100dvh - 510px)*2/3)));margin-left:auto;margin-right:auto}
 .carousel .slide>.srow,.carousel .slide>.mvrow{display:flex}
 .seg button[data-tab="shelves"]{display:none}
 #tabbar{display:none;position:fixed;left:0;right:0;bottom:0;z-index:6;justify-content:center;background:var(--bg);border-top:1px solid var(--border);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px))}
@@ -565,7 +565,7 @@ function renderHome(){
       <div class="srow"><div class="stitle">${esc(b.title)}</div><button class="edit2" aria-label="편집">⋮</button></div>
       <div class="a">${esc(b.author)}</div>
       <div class="sprog"><div class="bar"><i style="width:${p}%"></i></div><span>${p >= 99 ? '완독' : p + '%'}</span></div>
-      ${manual ? `<div class="mvrow"><button class="up" ${vis(true)} aria-label="앞으로">◀</button><span>순서 이동</span><button class="dn" ${vis(false)} aria-label="뒤로">▶</button></div>` : ''}</div>`;
+      ${manual ? `<div class="mvrow"><button class="up" ${vis(true)} aria-label="앞으로">◀</button><button class="dn" ${vis(false)} aria-label="뒤로">▶</button></div>` : ''}</div>`;
     const mv = manual ? `<div class="mv"><button class="up" ${vis(true)} aria-label="위로">▲</button><button class="dn" ${vis(false)} aria-label="아래로">▼</button></div>` : '';
     return `<div class="card${selSet.has(b.id) ? ' picked' : ''}" data-id="${b.id}" role="button" tabindex="0">${selectMode ? '<span class="ck"></span>' : ''}<button class="edit" aria-label="편집">✎</button>
       <div class="cover" style="${bg}">${b.cover ? '' : esc(b.title.charAt(0))}${p >= 99 ? '<span class="dnb sm">✓</span>' : ''}</div>
