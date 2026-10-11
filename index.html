@@ -148,9 +148,9 @@ body.dn-r .cover{width:84px;height:122px;font-size:34px}
 .sheet{width:100%;max-width:640px;background:var(--bg);color:var(--text);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}
 .sheet textarea{height:38vh;margin-bottom:12px}
 /* 인스타그램 댓글 창처럼: 손잡이 + 제목 + 가운데 내용 + 아래 고정 버튼. 키패드가 뜨면 창 전체가 키패드 위로 올라와요 */
-:is(#sheet,#trashSheet,#hlSheet,#mergeSheet,#panel,#dlg) .sheet{border-radius:24px 24px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.18)}
-:is(#sheet,#trashSheet,#hlSheet,#mergeSheet,#panel,#dlg) .sheet::before{content:"";display:block;width:40px;height:5px;border-radius:3px;background:var(--border);margin:-6px auto 12px}
-:is(#sheet,#trashSheet,#hlSheet,#mergeSheet,#panel,#dlg).open .sheet{animation:sheetUp .26s cubic-bezier(.2,.8,.2,1)}
+:is(#sheet,#trashSheet,#hlSheet,#mergeSheet,#panel,#dlg,#setp) .sheet{border-radius:24px 24px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.18)}
+:is(#sheet,#trashSheet,#hlSheet,#mergeSheet,#panel,#dlg,#setp) .sheet::before{content:"";display:block;width:40px;height:5px;border-radius:3px;background:var(--border);margin:-6px auto 12px}
+:is(#sheet,#trashSheet,#hlSheet,#mergeSheet,#panel,#dlg,#setp).open .sheet{animation:sheetUp .26s cubic-bezier(.2,.8,.2,1)}
 @keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
 #sheet{bottom:var(--kb,0px)}
 #sheet .sheet{display:flex;flex-direction:column;height:min(72dvh,calc(var(--vvh,100dvh) - 12px));padding-bottom:0;touch-action:pan-y}
@@ -1368,11 +1368,15 @@ $('trashList').onclick = e => { const r = e.target.closest('.bmi'); if (!r) retu
 $('sSave').onclick = () => commit($('sText').value.trim());
 $('sDel').onclick = () => commit('');
 $('sCancel').onclick = closeSheet;
-// 위쪽(손잡이·제목)을 아래로 끌어내리면 닫혀요
-(() => { const sh = $('sheet').firstElementChild; let y0 = null, dy = 0;
-  sh.addEventListener('touchstart', e => { if (e.target.closest('textarea,.row')) return; y0 = e.touches[0].clientY; dy = 0; sh.style.animation = 'none'; }, { passive: true });
+// 모든 창: 위쪽(손잡이·제목 부분)을 아래로 끌어내리면 닫혀요
+const SHEET_CLOSE = { sheet: () => closeSheet(), setp: () => closeSet(), panel: () => closePanels(), hlSheet: () => closeHl(), mergeSheet: () => $('mgNo').click(), trashSheet: () => $('trashClose').click(), dlg: () => $('dNo').click() };
+Object.keys(SHEET_CLOSE).forEach(id => { const sh = $(id).firstElementChild; let y0 = null, dy = 0;
+  sh.addEventListener('touchstart', e => { if (e.touches.length !== 1) return; const r = sh.getBoundingClientRect(), ty = e.touches[0].clientY;
+    if (ty - r.top > 56 || e.target.closest('input,textarea,select')) return; y0 = ty; dy = 0; sh.style.animation = 'none'; sh.style.transition = 'none'; }, { passive: true });
   sh.addEventListener('touchmove', e => { if (y0 === null) return; dy = Math.max(0, e.touches[0].clientY - y0); sh.style.transform = `translateY(${dy}px)`; }, { passive: true });
-  sh.addEventListener('touchend', () => { if (y0 === null) return; y0 = null; sh.style.transform = ''; sh.style.animation = ''; if (dy > 90) closeSheet(); }); })();
+  const end = () => { if (y0 === null) return; y0 = null; const go = dy > 80; sh.style.transition = 'transform .18s'; sh.style.transform = ''; sh.style.animation = '';
+    if (go) SHEET_CLOSE[id](); setTimeout(() => { sh.style.transition = ''; }, 200); };
+  sh.addEventListener('touchend', end); sh.addEventListener('touchcancel', end); });
 
 // ---------- 계정 저장 (db): 브라우저 저장소가 지워져도 책이 남도록 ----------
 // 한 문서는 256KiB 제한이라 본문을 6만 자씩 쪼개 저장해요.
