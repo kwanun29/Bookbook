@@ -114,8 +114,8 @@ body.dn-r .cover{width:84px;height:122px;font-size:34px}
 #body mark{background:#ffe066;color:#111;border-radius:3px}
 #body.editing p{outline:1px dashed var(--sub);outline-offset:1px;border-radius:4px}
 .toolbar button.on{background:var(--border);border-radius:12px}
-#sheet,#dlg,#panel,#hlSheet,#mergeSheet{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);align-items:flex-end;justify-content:center;z-index:10}
-#sheet.open,#dlg.open,#panel.open,#hlSheet.open,#mergeSheet.open{display:flex}
+#sheet,#trashSheet,#dlg,#panel,#hlSheet,#mergeSheet{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);align-items:flex-end;justify-content:center;z-index:10}
+#sheet.open,#trashSheet.open,#dlg.open,#panel.open,#hlSheet.open,#mergeSheet.open{display:flex}
 #setp{display:none;position:fixed;inset:0;align-items:flex-end;justify-content:center;z-index:9;pointer-events:none}
 #setp.open{display:flex}
 #setp .sheet{pointer-events:auto;max-height:58vh;overflow-y:auto;box-shadow:0 -6px 24px rgba(0,0,0,.25)}
@@ -147,6 +147,18 @@ body.dn-r .cover{width:84px;height:122px;font-size:34px}
 .seg button.on{background:var(--accent);color:var(--accent-text)}
 .sheet{width:100%;max-width:640px;background:var(--bg);color:var(--text);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}
 .sheet textarea{height:38vh;margin-bottom:12px}
+/* 인스타그램 댓글 창처럼: 손잡이 + 제목 + 가운데 내용 + 아래 고정 버튼. 키패드가 뜨면 창 전체가 키패드 위로 올라와요 */
+:is(#sheet,#trashSheet,#hlSheet,#mergeSheet,#panel,#dlg) .sheet{border-radius:24px 24px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.18)}
+:is(#sheet,#trashSheet,#hlSheet,#mergeSheet,#panel,#dlg) .sheet::before{content:"";display:block;width:40px;height:5px;border-radius:3px;background:var(--border);margin:-6px auto 12px}
+:is(#sheet,#trashSheet,#hlSheet,#mergeSheet,#panel,#dlg).open .sheet{animation:sheetUp .26s cubic-bezier(.2,.8,.2,1)}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
+#sheet{bottom:var(--kb,0px)}
+#sheet .sheet{display:flex;flex-direction:column;height:min(72dvh,calc(var(--vvh,100dvh) - 12px));padding-bottom:0;touch-action:pan-y}
+#sHead{text-align:center;font-size:16px;font-weight:800;padding:2px 0 12px;border-bottom:1px solid var(--border);margin:0 -16px 12px}
+#sheet textarea{flex:1;min-height:0;height:auto;margin-bottom:0;font-size:16px}
+#sheet .row{flex:none;margin:0 -16px;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--border);background:var(--bg)}
+#toast{display:none;position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:30;max-width:92%;background:#222;color:#fff;border-radius:22px;padding:10px 10px 10px 18px;font-size:14px;align-items:center;gap:12px;box-shadow:0 4px 14px rgba(0,0,0,.4)}#toast.on{display:flex}#toast button{color:#8ec5ff;font-weight:800;padding:4px 10px;white-space:nowrap}
+#trashBtn{display:none;position:absolute;left:12px;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:7;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:18px;padding:8px 14px;font-size:13px;font-weight:700;box-shadow:0 3px 10px rgba(0,0,0,.25)}#reader.edm #trashBtn.has{display:block}
 .toolbar{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:4px 6px 0}
 .trow{display:flex;align-items:center;gap:8px;padding:2px 10px}
 .trow.btns{justify-content:space-between;padding:0}
@@ -391,7 +403,7 @@ body.sf #tabbar{background:color-mix(in srgb,var(--bg) 86%,transparent);-webkit-
   <div class="scroll" id="scroll"><div id="wrap"><h2 id="bTitle"></h2><div id="body"></div><i id="padEnd"></i></div></div>
   <div id="dim"></div>
   <div id="posLbl"></div>
-  <button id="editDone">✓ 편집 종료</button>
+  <button id="trashBtn">↶ 삭제한 문단</button><button id="editDone">✓ 편집 종료</button>
   <button id="nextBar" hidden></button>
   <div class="toolbar">
     <div class="trow"><button id="pgLbl" aria-label="위치로 이동">0%</button><input type="range" class="rng" id="seek" min="0" max="1000" value="0" aria-label="읽은 위치"></div>
@@ -466,11 +478,14 @@ body.sf #tabbar{background:color-mix(in srgb,var(--bg) 86%,transparent);-webkit-
 
 <!-- 문단 편집 시트 -->
 <div id="sheet"><div class="sheet">
+  <div id="sHead">문단 편집</div>
   <textarea id="sText"></textarea>
   <div class="row"><button class="btn sub" id="sDel" style="margin:0">삭제</button>
   <button class="btn sub" id="sCancel" style="margin:0">취소</button>
   <button class="btn main" id="sSave" style="margin:0">저장</button></div>
 </div></div>
+<div id="trashSheet"><div class="sheet tall"><h3 style="margin:0 0 4px">삭제한 문단</h3><p class="note" style="margin:0 0 12px">누르면 원래 자리로 되돌려요.</p><div id="trashList"></div><button class="btn sub" id="trashClose" style="margin:8px 0 0">닫기</button></div></div>
+<div id="toast"><span id="toastMsg"></span><button id="toastBtn"></button></div>
 
 <script src="jszip.min.js"></script>
 <script>
@@ -1307,14 +1322,24 @@ $('body').onclick = e => {
   sheetI = +p.dataset.i; sheetEl = p;
   editAnchor = lastAnchor = getAnchor();           // 편집 창을 열기 전의 화면 위치를 기억
   $('sText').value = paras[sheetI].replace(/^\n+/, '');
-  $('sheet').classList.add('open'); $('sText').focus({ preventScroll: true });
+  $('sheet').classList.add('open'); sheetKb(); updTrash();
 };
+// 키패드가 올라오면 보이는 화면 아래에 시트를 맞춰서 삭제·취소·저장 버튼이 가려지지 않게 해요
+function sheetKb() { const v = window.visualViewport; if (!v) return;
+  const kb = Math.max(0, window.innerHeight - v.height - v.offsetTop), st = document.documentElement.style;
+  st.setProperty('--kb', kb + 'px'); st.setProperty('--vvh', v.height + 'px'); }
+if (window.visualViewport) { visualViewport.addEventListener('resize', sheetKb); visualViewport.addEventListener('scroll', sheetKb); }
+let toastT = null, toastFn = null;
+function toast(msg, label, fn, ms) { $('toastMsg').textContent = msg; $('toastBtn').textContent = label || ''; $('toastBtn').style.display = label ? '' : 'none'; toastFn = fn; $('toast').classList.add('on');
+  clearTimeout(toastT); toastT = setTimeout(() => $('toast').classList.remove('on'), ms || 9000); }
+$('toastBtn').onclick = () => { $('toast').classList.remove('on'); clearTimeout(toastT); if (toastFn) toastFn(); };
 function closeSheet() { // 편집 창을 닫고, 보고 있던 그 페이지로 정확히 되돌아가요
-  $('sheet').classList.remove('open'); $('sText').blur(); hold(600);
+  $('sheet').classList.remove('open'); $('sText').blur(); hold(600); document.documentElement.style.setProperty('--kb', '0px');
   requestAnimationFrame(() => { if (!gotoAnchor(editAnchor)) restore(); afterJump(); });
 }
 async function commit(text) { // text가 빈 문자열이면 문단 삭제
-  const old = paras[sheetI], lead = old.match(/^\n*/)[0];
+  const old = paras[sheetI], lead = old.match(/^\n*/)[0], delIdx = sheetI;
+  if (!text) { cur.trash = (cur.trash || []).filter(t => t.i !== delIdx); cur.trash.unshift({ i: delIdx, t: old, hl: (cur.hl || []).filter(h => h.p === delIdx), at: Date.now() }); cur.trash.length = Math.min(cur.trash.length, 60); }
   paras[sheetI] = text ? lead + text : '';
   cur.content = paras.join('\n\n');
   if (!(await saveContent(cur)) && !cloud) { // 저장 실패 시 되돌리기
@@ -1323,12 +1348,31 @@ async function commit(text) { // text가 빈 문자열이면 문단 삭제
   cur.xd = true;
   if (text) { if (paras[sheetI] !== old) cur.hl = (cur.hl || []).filter(h => h.p !== sheetI); sheetEl.innerHTML = paraHTML(sheetI); }
   else { cur.hl = (cur.hl || []).filter(h => h.p !== sheetI); sheetEl.remove(); }
-  cloudSave(cur, true);
+  cloudSave(cur, true); saveMeta(cur); updTrash();
   closeSheet();
+  if (!text) toast('문단을 삭제했어요', '되돌리기', () => restoreTrash(delIdx));
 }
+function updTrash() { $('trashBtn').classList.toggle('has', !!(cur && cur.trash && cur.trash.length)); $('trashBtn').textContent = '↶ 삭제한 문단 ' + ((cur && cur.trash) ? cur.trash.length : 0); }
+async function restoreTrash(i) {
+  const k = (cur.trash || []).findIndex(t => t.i === i); if (k < 0) return; const t = cur.trash[k];
+  const a = getAnchor(); paras[i] = t.t; cur.content = paras.join('\n\n');
+  if (!(await saveContent(cur)) && !cloud) { paras[i] = ''; cur.content = paras.join('\n\n'); alert('저장 공간이 부족해요.'); return; }
+  cur.trash.splice(k, 1); cur.hl = (cur.hl || []).concat(t.hl || []); cur.xd = true; cloudSave(cur, true); saveMeta(cur); updTrash();
+  hold(600); renderBody(); requestAnimationFrame(() => { if (!gotoAnchor(a)) restore(); afterJump(); });
+}
+function showTrash() { const L = cur.trash || [];
+  $('trashList').innerHTML = L.length ? L.map(t => `<div class="bmi q" data-i="${t.i}"><div class="bt">${esc(t.t.trim().slice(0, 140))}</div><button class="btn sub" style="margin:0;width:auto;padding:6px 12px">복원</button></div>`).join('') : '<p class="note">삭제한 문단이 없어요.</p>';
+  $('trashSheet').classList.add('open'); }
+$('trashBtn').onclick = showTrash; $('trashClose').onclick = () => $('trashSheet').classList.remove('open');
+$('trashList').onclick = e => { const r = e.target.closest('.bmi'); if (!r) return; $('trashSheet').classList.remove('open'); restoreTrash(+r.dataset.i); };
 $('sSave').onclick = () => commit($('sText').value.trim());
-$('sDel').onclick = () => { if (confirm('이 문단을 삭제할까요?')) commit(''); };
+$('sDel').onclick = () => commit('');
 $('sCancel').onclick = closeSheet;
+// 위쪽(손잡이·제목)을 아래로 끌어내리면 닫혀요
+(() => { const sh = $('sheet').firstElementChild; let y0 = null, dy = 0;
+  sh.addEventListener('touchstart', e => { if (e.target.closest('textarea,.row')) return; y0 = e.touches[0].clientY; dy = 0; sh.style.animation = 'none'; }, { passive: true });
+  sh.addEventListener('touchmove', e => { if (y0 === null) return; dy = Math.max(0, e.touches[0].clientY - y0); sh.style.transform = `translateY(${dy}px)`; }, { passive: true });
+  sh.addEventListener('touchend', () => { if (y0 === null) return; y0 = null; sh.style.transform = ''; sh.style.animation = ''; if (dy > 90) closeSheet(); }); })();
 
 // ---------- 계정 저장 (db): 브라우저 저장소가 지워져도 책이 남도록 ----------
 // 한 문서는 256KiB 제한이라 본문을 6만 자씩 쪼개 저장해요.
@@ -1345,7 +1389,7 @@ const put = (name, key, val) => new Promise((res, rej) => {
 const safe = pr => pr.then(() => true, () => false); // 실패(저장 공간 부족 등)하면 false
 const metaOf = b => ({ id: b.id, title: b.title, author: b.author, cover: b.cover || '', color: b.color,
                        order: b.order ?? 0, progress: b.progress || 0, lastRead: b.lastRead || 0,
-                       pos: b.pos ?? null, bookmarks: b.bookmarks || [], hl: b.hl || [], tags: b.tags || [], hidden: !!b.hidden });
+                       pos: b.pos ?? null, bookmarks: b.bookmarks || [], hl: b.hl || [], tags: b.tags || [], hidden: !!b.hidden, trash: b.trash || [] });
 const saveMeta = b => idb ? safe(put('meta', b.id, metaOf(b))) : Promise.resolve(store.set('mybook:books', books));
 const saveContent = b => idb ? safe(put('content', b.id, b.content)) : Promise.resolve(store.set('mybook:books', books));
 const saveBook = async b => idb ? (await saveContent(b)) && (await saveMeta(b)) : store.set('mybook:books', books);
