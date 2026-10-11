@@ -273,6 +273,20 @@ button:active{opacity:.7}
 #selBar.on{display:flex}
 #selBar button[data-c]{width:30px;height:30px;border-radius:50%;border:1px solid rgba(0,0,0,.15)}
 #selBar #sbMemo{font-size:14px;font-weight:600;padding:4px 6px;white-space:nowrap}
+
+/* ---- 부드러운 기본 테마: 은은한 그림자와 얇은 책등만 ---- */
+body.sf .card{border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.07)}
+body.sf .bigcover,body.sf .cover,body.sf .mini{border-radius:3px 7px 7px 3px}
+body.sf .bigcover{box-shadow:0 10px 18px -8px rgba(0,0,0,.35),0 2px 4px rgba(0,0,0,.12)}
+body.sf .cover{box-shadow:0 3px 8px -2px rgba(0,0,0,.3)}
+body.sf .bigcover::before,body.sf .cover::before{content:"";position:absolute;left:0;top:0;bottom:0;width:7%;border-radius:3px 0 0 3px;pointer-events:none;background:linear-gradient(90deg,rgba(0,0,0,.22),rgba(255,255,255,.14) 45%,rgba(0,0,0,0))}
+body.sf .bigcover::after,body.sf .cover::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(120deg,rgba(255,255,255,.14),rgba(255,255,255,0) 40%)}
+body.sf .bigcover>*{position:relative;z-index:1}
+body.sf .dnb{z-index:2}
+body.sf #tabbar{background:color-mix(in srgb,var(--bg) 86%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) body.sf .card{box-shadow:0 0 0 1px rgba(255,255,255,.06)}:root:not([data-theme="light"]) body.sf .bigcover{box-shadow:0 0 0 1px rgba(255,255,255,.1),0 8px 16px -8px #000}}
+:root[data-theme="dark"] body.sf .card{box-shadow:0 0 0 1px rgba(255,255,255,.06)}
+:root[data-theme="dark"] body.sf .bigcover{box-shadow:0 0 0 1px rgba(255,255,255,.1),0 8px 16px -8px #000}
 </style>
 </head>
 <body>
@@ -339,8 +353,8 @@ button:active{opacity:.7}
 <section id="add" class="view">
   <header><button class="back" id="addBack">‹ 뒤로</button><b>책 추가</b><span style="width:48px"></span></header>
   <div class="form">
-    <label class="btn main" for="file" style="display:block;text-align:center;cursor:pointer">EPUB / TXT 파일 선택</label>
-    <input type="file" id="file" multiple accept=".epub,.txt,application/epub+zip,text/plain" hidden>
+    <label class="btn main" for="file" style="display:block;text-align:center;cursor:pointer">EPUB / TXT / PDF 파일 선택</label>
+    <input type="file" id="file" multiple accept=".epub,.txt,.pdf,application/epub+zip,text/plain,application/pdf" hidden>
     <p class="status" id="status"></p>
     <button class="btn sub" id="sample">샘플 책 추가 (테스트용)</button>
   </div>
@@ -531,6 +545,7 @@ const UI_OPTS = { acc: [['default', '기본'], ['blue', '파랑'], ['green', '�
 function applyUi() {
   const de = document.documentElement;
   if (ui.acc && ui.acc !== 'default') de.dataset.acc = ui.acc; else delete de.dataset.acc;
+  document.body.classList.add('sf');
   document.body.classList.toggle('dn-c', ui.dens === 'compact'); document.body.classList.toggle('dn-r', ui.dens === 'roomy');
   [['uiAcc', 'acc'], ['uiSize', 'size'], ['uiDens', 'dens']].forEach(([id, k]) => { const el = $(id); if (!el) return;
     el.innerHTML = UI_OPTS[k].map(([v, n]) => `<button data-uk="${k}" data-uv="${v}" class="${ui[k] === v ? 'on' : ''}">${n}</button>`).join(''); });
@@ -695,6 +710,85 @@ async function parseTxt(file) {
   if (!content) throw new Error('내용이 비어 있어요');
   return { title: file.name.replace(/\.txt$/i, ''), author: '', content, cover: '' };
 }
+
+// ---- PDF 읽기: 글자만 뽑아서 가져와요 (그림·표는 빠지고, 스캔본은 안 돼요) ----
+const PDF_LIB = 'pdf.min.js', PDF_WORKER = 'pdf.worker.min.js';
+let pdfReady = null;
+function loadPdfJs() {
+  if (pdfReady) return pdfReady;
+  const addScript = src => new Promise((ok, no) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => no(new Error('PDF 도구를 불러오지 못했어요 (인터넷 확인)')); document.head.appendChild(s); });
+  pdfReady = (async () => {
+    if (!window.pdfjsLib) await addScript(PDF_LIB);
+    try { const r = await fetch(PDF_WORKER); if (!r.ok) throw 0; pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([await r.text()], { type: 'text/javascript' })); }
+    catch (e) { await addScript(PDF_WORKER); pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER; } // 작업자를 못 띄우면 같은 화면에서 처리
+  })().catch(e => { pdfReady = null; throw e; });
+  return pdfReady;
+}
+async function parsePdf(file, onPage) {
+  await loadPdfJs();
+  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+  const pages = [];
+  for (let n = 1; n <= pdf.numPages; n++) {
+    if (onPage) onPage(n, pdf.numPages);
+    const tc = await (await pdf.getPage(n)).getTextContent();
+    // 같은 줄(세로 위치가 비슷)끼리 묶어요
+    const lines = [];
+    for (const it of tc.items) {
+      if (typeof it.str !== 'string') continue;
+      const x = it.transform[4], y = it.transform[5], h = Math.abs(it.transform[3]) || it.height || 10, w = it.width || 0;
+      let L = lines[lines.length - 1];
+      if (L && Math.abs(L.y - y) < h * 0.5) { const gap = x - L.end; if (it.str && gap > h * 0.2 && !/\s$/.test(L.t) && !/^\s/.test(it.str)) L.t += ' '; L.t += it.str; L.end = x + w; }
+      else if (it.str.trim()) lines.push({ t: it.str, x, y, h, end: x + w });
+    }
+    lines.forEach(l => l.t = l.t.replace(/\s+/g, ' ').trim());
+    pages.push(lines.filter(l => l.t));
+  }
+  if (!pages.some(p => p.length)) throw new Error('글자를 읽을 수 없어요 (스캔본 PDF는 지원하지 않아요)');
+  // 쪽 번호·머리말·꼬리말: 여러 쪽의 맨 위/아래에 반복되는 줄은 버려요
+  const norm = t => t.replace(/\d+/g, '#'), cnt = {}, edge = p => p.length > 1 ? [p.reduce((a, b) => b.y > a.y ? b : a), p.reduce((a, b) => b.y < a.y ? b : a)] : [];  // 화면 맨 위·맨 아래 줄
+  pages.forEach(p => new Set(edge(p).map(l => norm(l.t))).forEach(k => cnt[k] = (cnt[k] || 0) + 1));
+  const rep = k => pages.length >= 4 && cnt[k] >= pages.length * 0.4;
+  pages.forEach((p, i) => { const drop = edge(p).filter(l => rep(norm(l.t)) || /^[-–\s]*\d+[-–\s]*$/.test(l.t)); pages[i] = p.filter(l => !drop.includes(l)); });
+  // 줄 → 문단: 문장이 끝난 줄이 짧거나(문단 마지막 줄), 들여쓰기·큰 줄 간격·대사(따옴표)로 시작하면 새 문단
+  const END = /[.!?。…”"'’」』)\]]\s*$/, QUOTE = /^[“"「『‘'—–-]/, paras = []; let cur = '', lastShort = false;
+  // 줄 끝에서 낱말 중간이 끊기는 PDF(줄 시작이 조사 '는, 의…'인 줄이 많음)는 줄을 이을 때 공백을 넣지 않아요
+  const allL = pages.flat(), partL = allL.filter(l => /^[는은을를의에도로와과만께서](?![가-힣])/.test(l.t)).length, charWrap = partL >= 3 && partL >= allL.length * 0.015;
+  // 문서 안에서 줄 중간에 온전히 나온 낱말 목록: 줄바꿈으로 갈라진 낱말을 이을 때 띄울지 판단하는 근거
+  const strip = w => w.replace(/^[^가-힣A-Za-z0-9]+|[^가-힣A-Za-z0-9]+$/g, ''), vocab = new Map();
+  allL.forEach(l => { const w = l.t.split(' '); for (let k = 1; k < w.length - 1; k++) { const t = strip(w[k]); if (t) vocab.set(t, (vocab.get(t) || 0) + 1); } });
+  const glue = (prev, next) => { // true = 공백 없이 붙이기
+    const a = strip(prev.split(' ').pop()), b = strip(next.split(' ')[0]);
+    if (vocab.has(a + b)) return true;
+    if (vocab.has(a) && vocab.has(b)) return false;
+    return /^[는은을를의에도로와과만께서](?![가-힣])/.test(next) || !/[는은을를의에도로와과만다요고며서면까죠네가]$/.test(prev);
+  };
+  const flush = () => { if (cur.trim()) paras.push(cur.trim()); cur = ''; };
+  pages.forEach(p => {
+    if (!p.length) return;
+    const minX = Math.min(...p.map(l => l.x)), gaps = [], ends = p.map(l => l.end).sort((a, b) => a - b), maxEnd = ends[Math.floor(ends.length * 0.85)];
+    for (let i = 1; i < p.length; i++) gaps.push(Math.abs(p[i - 1].y - p[i].y));
+    const med = gaps.length ? gaps.slice().sort((a, b) => a - b)[gaps.length >> 1] : 0;
+    p.forEach((l, i) => {
+      const indent = l.x > minX + l.h * 0.8, bigGap = i > 0 && med > 0 && Math.abs(p[i - 1].y - l.y) > med * 1.5;
+      if (cur && (bigGap || (lastShort && cur.length < 40) || (END.test(cur) && (indent || lastShort || QUOTE.test(l.t))))) flush();
+      if (cur && !/-$/.test(cur) && !(charWrap && /[가-힣]$/.test(cur) && /^[가-힣]/.test(l.t) && glue(cur, l.t)) && !/[぀-ヿ一-鿿]$/.test(cur) && !/^[぀-ヿ一-鿿]/.test(l.t)) cur += ' '; // 줄바꿈은 공백으로 이어요 (한자·가나는 공백 없이)
+      cur += l.t; lastShort = l.end < maxEnd - l.h * 1.2;
+    });
+  });
+  flush();
+  // 문장 부호 뒤 띄어쓰기 보정, 너무 긴 덩어리는 문장 끝에서 나눠요
+  const out = [];
+  paras.forEach(t => {
+    t = t.replace(/([.!?。])(?=[가-힣])/g, '$1 ').replace(/\s{2,}/g, ' ');
+    if (t.length <= 280) return out.push(t);
+    let buf = '';
+    t.split(/(?<=[.!?。…”"」』])\s+/).forEach(s => { buf += (buf ? ' ' : '') + s; if (buf.length >= 140) { out.push(buf); buf = ''; } });
+    if (buf) out.push(buf);
+  });
+  paras.length = 0; paras.push(...out);
+  const meta = await pdf.getMetadata().catch(() => null), info = (meta && meta.info) || {};
+  return { title: (/^(about:blank|untitled|microsoft)/i.test((info.Title || '').trim()) ? '' : (info.Title || '').trim()) || file.name.replace(/\.pdf$/i, ''), author: (info.Author || '').trim(), content: paras.join('\n\n'), cover: '', noPick: true };
+}
 $('file').onchange = async e => {
   const fs = [...e.target.files]; if (!fs.length) return;
   fs.sort((x, y) => x.name.localeCompare(y.name, 'ko', { numeric: true }));
@@ -702,7 +796,7 @@ $('file').onchange = async e => {
   // 뒤쪽 파일부터 넣어서, 서재에서는 1화, 2화, 3화 순서로 보이게 해요
   for (let k = fs.length - 1; k >= 0; k--) {
     const f = fs[k]; setStatus(`불러오는 중… (${fs.length - k}/${fs.length}) ${f.name}`);
-    try { const r = await (/\.txt$/i.test(f.name) ? parseTxt(f) : parseEpub(f)); r.title = pickTitle(r); await addBook(r, true); ok++; }
+    try { const r = await (/\.txt$/i.test(f.name) ? parseTxt(f) : /\.pdf$/i.test(f.name) ? parsePdf(f, (n, t) => setStatus(`PDF 읽는 중… ${n}/${t}쪽 · ${f.name}`)) : parseEpub(f)); if (!r.noPick) r.title = pickTitle(r); await addBook(r, true); ok++; }
     catch (err) { fail.push(`${f.name} (${err.message})`); }
   }
   await Promise.all(books.map(saveMeta));
@@ -1689,7 +1783,7 @@ $('actSheet').onclick = async e => {
 };
 
 // 첫 실행 안내
-const INTRO = [['책 넣기', '오른쪽 위 + 버튼으로 EPUB·TXT 파일을 추가해요.\n여러 개를 한꺼번에 골라도 되고, 제목은 본문 첫 줄에서 자동으로 만들어져요.'],
+const INTRO = [['책 넣기', '오른쪽 위 + 버튼으로 EPUB·TXT·PDF 파일을 추가해요.\n여러 개를 한꺼번에 골라도 되고, 제목은 본문 첫 줄에서 자동으로 만들어져요.'],
   ['읽기', '화면 가운데를 누르면 메뉴가, 왼쪽·오른쪽을 누르면 페이지가 넘어가요.\nAa에서 글꼴·색·여백을 바꾸고, 글을 길게 눌러 형광펜과 메모를 남겨요.'],
   ['내 책 지키기', '책은 이 기기(또는 로그인한 계정)에 저장돼요.\n아래 설정 탭에서 백업 파일을 가끔 만들어 두면 안전해요. 책이 많아지면 책장·태그·숨기기로 정리하세요.']];
 let inI = 0;
