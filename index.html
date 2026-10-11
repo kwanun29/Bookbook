@@ -299,6 +299,10 @@ body.sf #tabbar{background:color-mix(in srgb,var(--bg) 86%,transparent);-webkit-
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]) body.sf .card{box-shadow:0 0 0 1px rgba(255,255,255,.06)}:root:not([data-theme="light"]) body.sf .bigcover{box-shadow:0 0 0 1px rgba(255,255,255,.1),0 8px 16px -8px #000}}
 :root[data-theme="dark"] body.sf .card{box-shadow:0 0 0 1px rgba(255,255,255,.06)}
 :root[data-theme="dark"] body.sf .bigcover{box-shadow:0 0 0 1px rgba(255,255,255,.1),0 8px 16px -8px #000}
+
+/* 표지 모양 선택 */
+body.cv-flat .bigcover,body.cv-flat .cover,body.cv-flat .mini{border-radius:5px;box-shadow:inset 0 0 0 1px rgba(128,128,128,.28)!important}
+body.cv-flat .bigcover::before,body.cv-flat .bigcover::after,body.cv-flat .cover::before,body.cv-flat .cover::after{display:none}
 </style>
 </head>
 <body>
@@ -561,6 +565,7 @@ function applyUi() {
   const de = document.documentElement;
   if (ui.acc && ui.acc !== 'default') de.dataset.acc = ui.acc; else delete de.dataset.acc;
   document.body.classList.add('sf');
+  document.body.classList.add('cv-flat');
   document.body.classList.toggle('dn-c', ui.dens === 'compact'); document.body.classList.toggle('dn-r', ui.dens === 'roomy');
   [['uiAcc', 'acc'], ['uiSize', 'size'], ['uiDens', 'dens']].forEach(([id, k]) => { const el = $(id); if (!el) return;
     el.innerHTML = UI_OPTS[k].map(([v, n]) => `<button data-uk="${k}" data-uv="${v}" class="${ui[k] === v ? 'on' : ''}">${n}</button>`).join(''); });
