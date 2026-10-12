@@ -303,6 +303,18 @@ body.sf #tabbar{background:color-mix(in srgb,var(--bg) 86%,transparent);-webkit-
 /* 표지 모양 선택 */
 body.cv-flat .bigcover,body.cv-flat .cover,body.cv-flat .mini{border-radius:5px;box-shadow:inset 0 0 0 1px rgba(128,128,128,.28)!important}
 body.cv-flat .bigcover::before,body.cv-flat .bigcover::after,body.cv-flat .cover::before,body.cv-flat .cover::after{display:none}
+
+/* 표지 영역 선택 */
+#cropper{display:none;position:fixed;inset:0;z-index:40;background:#000;color:#fff;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
+#cropper.open{display:flex}
+#cropper .cbar{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;font-size:16px}
+#cropper .cbar button{color:#fff;font-weight:700;font-size:16px;padding:6px 4px}#cropper #cpOk{color:#8ec5ff}
+#cpStage{flex:1;position:relative;overflow:hidden;touch-action:none;cursor:grab}
+#cpImg{position:absolute;left:50%;top:50%;max-width:none;pointer-events:none;user-select:none;transform-origin:center}
+#cpFrame{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border:2px solid #fff;border-radius:3px;box-shadow:0 0 0 100vmax rgba(0,0,0,.65);pointer-events:none;
+  background:linear-gradient(90deg,transparent 33.2%,rgba(255,255,255,.35) 33.3% 33.5%,transparent 33.6% 66.5%,rgba(255,255,255,.35) 66.6% 66.8%,transparent 66.9%),linear-gradient(0deg,transparent 33.2%,rgba(255,255,255,.35) 33.3% 33.5%,transparent 33.6% 66.5%,rgba(255,255,255,.35) 66.6% 66.8%,transparent 66.9%)}
+#cropper .czoom{display:flex;align-items:center;gap:12px;padding:10px 24px 4px}#cropper .czoom input{flex:1;accent-color:#fff}
+#cropper .cnote{margin:0;padding:2px 20px calc(16px + env(safe-area-inset-bottom,0px));text-align:center;font-size:13px;color:#aaa}
 </style>
 </head>
 <body>
@@ -479,6 +491,11 @@ body.cv-flat .bigcover::before,body.cv-flat .bigcover::after,body.cv-flat .cover
 <div id="actSheet"><div class="sheet"><p id="actTitle"></p><div id="actList"></div></div></div>
 <div id="introSheet"><div class="sheet"><h2 id="inT"></h2><p id="inP"></p><div class="dots" id="inD"></div>
   <div class="row"><button class="btn sub" id="inSkip" style="margin:0">건너뛰기</button><button class="btn main" id="inNext" style="margin:0">다음</button></div></div></div>
+
+<div id="cropper"><div class="cbar"><button id="cpCancel">취소</button><b>표지 영역 선택</b><button id="cpOk">확인</button></div>
+  <div id="cpStage"><canvas id="cpImg"></canvas><div id="cpFrame"></div></div>
+  <div class="czoom"><span>−</span><input type="range" id="cpZoom" min="0" max="100" value="0"><span>＋</span></div>
+  <p class="cnote">사진을 끌어서 표지로 쓸 부분을 맞추고, 두 손가락이나 막대로 크기를 조절해요</p></div>
 
 <!-- 문단 편집 시트 -->
 <div id="sheet"><div class="sheet">
@@ -887,9 +904,55 @@ async function makeCover(blob) {
   if (first) return enc(first); // 정말 검은 사진이면 그대로
   throw new Error('이미지를 읽을 수 없어요');
 }
+
+// ---- 표지 영역 선택: 사진이 표지(2:3)와 비율이 다르면, 표지로 쓸 부분을 직접 고르게 해요 ----
+async function loadSource(blob) { // 사진을 읽어 최대 2400px 캔버스로 (iOS 검은 화면 방지로 여러 방법 시도)
+  const url = URL.createObjectURL(blob), toCv = (src, w, h) => { const k = Math.min(1, 2400 / Math.max(w, h)), c = whiteCanvas(Math.round(w * k), Math.round(h * k)); c.getContext('2d').drawImage(src, 0, 0, c.width, c.height); return c; };
+  const tries = [async () => { const i = await loadImg(url); return toCv(i, i.naturalWidth, i.naturalHeight); },
+    async () => { const b = await createImageBitmap(blob); return toCv(b, b.width, b.height); },
+    async () => { const b = await createImageBitmap(blob, { resizeWidth: 1600, resizeQuality: 'high' }); return toCv(b, b.width, b.height); }];
+  let first = null;
+  try { for (const t of tries) { try { const c = await t(); first = first || c; if (!isBlack(c)) return c; } catch (e) {} } }
+  finally { URL.revokeObjectURL(url); }
+  if (first) return first; throw new Error('이미지를 읽을 수 없어요');
+}
+function cropToCover(src, x, y, w, h) { // src의 (x,y,w,h) 영역을 표지 크기로 (단계적으로 줄여요)
+  let c = whiteCanvas(Math.max(1, Math.round(w)), Math.max(1, Math.round(h))); c.getContext('2d').drawImage(src, x, y, w, h, 0, 0, c.width, c.height);
+  const ow = Math.min(COVW, c.width), oh = Math.round(ow * COVH / COVW);
+  while (c.width / 2 >= ow * 1.5) { const n = whiteCanvas(Math.floor(c.width / 2), Math.floor(c.height / 2)); n.getContext('2d').drawImage(c, 0, 0, n.width, n.height); c = n; }
+  const out = whiteCanvas(ow, oh); out.getContext('2d').drawImage(c, 0, 0, ow, oh); return enc(out);
+}
+let cp = null;
+function cpRender() { const c = cp, el = $('cpImg');
+  c.s = Math.min(c.smin * 6, Math.max(c.smin, c.s)); const hw = c.fw / (2 * c.s), hh = c.fh / (2 * c.s);
+  c.cx = Math.min(c.iw - hw, Math.max(hw, c.cx)); c.cy = Math.min(c.ih - hh, Math.max(hh, c.cy));
+  el.style.margin = `${-c.ih / 2}px 0 0 ${-c.iw / 2}px`; el.style.transform = `translate(${(c.iw / 2 - c.cx) * c.s}px,${(c.ih / 2 - c.cy) * c.s}px) scale(${c.s})`;
+  $('cpZoom').value = Math.round(Math.log(c.s / c.smin) / Math.log(6) * 100); }
+function openCropper(src) {
+  $('cropper').classList.add('open');
+  const st = $('cpStage'), fw = Math.min(st.clientWidth * 0.74, st.clientHeight * 0.82 * 2 / 3), fh = fw * 1.5, iw = src.width, ih = src.height;
+  const el = $('cpImg'); el.width = iw; el.height = ih; el.getContext('2d').drawImage(src, 0, 0);
+  $('cpFrame').style.width = fw + 'px'; $('cpFrame').style.height = fh + 'px';
+  const smin = Math.max(fw / iw, fh / ih); cp = { src, iw, ih, fw, fh, smin, s: smin, cx: iw / 2, cy: ih / 2 }; cpRender();
+}
+(() => { const st = $('cpStage'), ptr = new Map(); let d0 = 0, s0 = 1;
+  st.addEventListener('pointerdown', e => { st.setPointerCapture(e.pointerId); ptr.set(e.pointerId, [e.clientX, e.clientY]); if (ptr.size === 2) { const [a, b] = [...ptr.values()]; d0 = Math.hypot(a[0] - b[0], a[1] - b[1]); s0 = cp.s; } });
+  st.addEventListener('pointermove', e => { if (!cp || !ptr.has(e.pointerId)) return; const p = ptr.get(e.pointerId), dx = e.clientX - p[0], dy = e.clientY - p[1]; ptr.set(e.pointerId, [e.clientX, e.clientY]);
+    if (ptr.size === 1) { cp.cx -= dx / cp.s; cp.cy -= dy / cp.s; } else if (ptr.size === 2) { const [a, b] = [...ptr.values()]; cp.s = s0 * Math.hypot(a[0] - b[0], a[1] - b[1]) / (d0 || 1); }
+    cpRender(); });
+  const up = e => { ptr.delete(e.pointerId); if (ptr.size === 1) { /* 한 손가락 남으면 계속 이동 */ } };
+  st.addEventListener('pointerup', up); st.addEventListener('pointercancel', up);
+  st.addEventListener('wheel', e => { if (!cp) return; e.preventDefault(); cp.s *= e.deltaY < 0 ? 1.08 : 1 / 1.08; cpRender(); }, { passive: false });
+  $('cpZoom').addEventListener('input', e => { if (!cp) return; cp.s = cp.smin * Math.pow(6, +e.target.value / 100); cpRender(); });
+  $('cpCancel').onclick = () => { $('cropper').classList.remove('open'); cp = null; };
+  $('cpOk').onclick = () => { if (!cp) return; const c = cp, w = c.fw / c.s, h = c.fh / c.s;
+    try { newCover = cropToCover(c.src, c.cx - w / 2, c.cy - h / 2, w, h); paintPreview(); $('eStatus').textContent = ''; } catch (err) { $('eStatus').textContent = '이미지를 읽을 수 없어요.'; }
+    $('cropper').classList.remove('open'); cp = null; }; })();
 $('eFile').onchange = async e => {
   const f = e.target.files[0]; if (!f) return;
-  try { newCover = await makeCover(f); paintPreview(); $('eStatus').textContent = ''; }
+  try { const src = await loadSource(f);
+    if (Math.abs(src.width / src.height - COVW / COVH) < 0.02) { newCover = cropToCover(src, 0, 0, src.width, src.height); paintPreview(); $('eStatus').textContent = ''; }
+    else openCropper(src); }
   catch (err) { $('eStatus').textContent = '이미지를 읽을 수 없어요.'; }
   e.target.value = '';
 };
