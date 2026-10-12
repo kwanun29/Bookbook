@@ -150,8 +150,6 @@ body.dn-r .cover{width:84px;height:122px;font-size:34px}
 /* 인스타그램 댓글 창처럼: 손잡이 + 제목 + 가운데 내용 + 아래 고정 버튼. 키패드가 뜨면 창 전체가 키패드 위로 올라와요 */
 :is(#sheet,#trashSheet,#hlSheet,#mergeSheet,#panel,#dlg,#setp) .sheet{border-radius:24px 24px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.18)}
 .grab{flex:none;height:30px;margin:-16px -16px 0;display:flex;justify-content:center;align-items:flex-start;padding-top:10px;touch-action:none}.grab::before{content:"";display:block;width:40px;height:5px;border-radius:3px;background:var(--border)}
-:is(#sheet,#trashSheet,#hlSheet,#mergeSheet,#panel,#dlg,#setp).open .sheet{animation:sheetUp .26s cubic-bezier(.2,.8,.2,1)}
-@keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
 #sheet{bottom:var(--kb,0px)}
 #sheet .sheet{display:flex;flex-direction:column;height:min(72dvh,calc(var(--vvh,100dvh) - 12px));padding-bottom:0;touch-action:pan-y}
 #sHead{text-align:center;font-size:16px;font-weight:800;padding:2px 0 12px;border-bottom:1px solid var(--border);margin:0 -16px 12px}
@@ -315,6 +313,14 @@ body.cv-flat .bigcover::before,body.cv-flat .bigcover::after,body.cv-flat .cover
   background:linear-gradient(90deg,transparent 33.2%,rgba(255,255,255,.35) 33.3% 33.5%,transparent 33.6% 66.5%,rgba(255,255,255,.35) 66.6% 66.8%,transparent 66.9%),linear-gradient(0deg,transparent 33.2%,rgba(255,255,255,.35) 33.3% 33.5%,transparent 33.6% 66.5%,rgba(255,255,255,.35) 66.6% 66.8%,transparent 66.9%)}
 #cropper .czoom{display:flex;align-items:center;gap:12px;padding:10px 24px 4px}#cropper .czoom input{flex:1;accent-color:#fff}
 #cropper .cnote{margin:0;padding:2px 20px calc(16px + env(safe-area-inset-bottom,0px));text-align:center;font-size:13px;color:#aaa}
+
+/* 창 열고 닫을 때 아래↔위 슬라이드 (열 때 올라오고, 닫을 때 내려가요) */
+:is(#sheet,#trashSheet,#hlSheet,#mergeSheet,#panel,#dlg){display:flex;visibility:hidden;background:rgba(0,0,0,0);transition:background .32s ease,visibility 0s .34s}
+:is(#sheet,#trashSheet,#hlSheet,#mergeSheet,#panel,#dlg).open{visibility:visible;background:rgba(0,0,0,.45);transition:background .32s ease,visibility 0s}
+#setp{display:flex;visibility:hidden;transition:visibility 0s .34s}#setp.open{visibility:visible;transition:visibility 0s}
+:is(#sheet,#trashSheet,#hlSheet,#mergeSheet,#panel,#dlg,#setp) .sheet{transform:translateY(106%);transition:transform .34s cubic-bezier(.22,.9,.28,1)}
+:is(#sheet,#trashSheet,#hlSheet,#mergeSheet,#panel,#dlg,#setp).open .sheet{transform:none;animation:none}
+.rhead,.toolbar{transition:transform .34s cubic-bezier(.22,.9,.28,1),opacity .25s}
 </style>
 </head>
 <body>
@@ -1442,8 +1448,8 @@ Object.keys(SHEET_CLOSE).forEach(id => { const sh = $(id).firstElementChild; let
   sh.addEventListener('touchstart', e => { if (e.touches.length !== 1) return; const ty = e.touches[0].clientY;
     if (!e.target.closest('.grab,#sHead')) return; y0 = ty; dy = 0; sh.style.animation = 'none'; sh.style.transition = 'none'; }, { passive: true });
   sh.addEventListener('touchmove', e => { if (y0 === null) return; dy = Math.max(0, e.touches[0].clientY - y0); sh.style.transform = `translateY(${dy}px)`; }, { passive: true });
-  const end = () => { if (y0 === null) return; y0 = null; const go = dy > 80; sh.style.transition = 'transform .18s'; sh.style.transform = ''; sh.style.animation = '';
-    if (go) SHEET_CLOSE[id](); setTimeout(() => { sh.style.transition = ''; }, 200); };
+  const end = () => { if (y0 === null) return; y0 = null; const go = dy > 80; sh.style.transition = ''; sh.style.transform = ''; sh.style.animation = '';
+    if (go) SHEET_CLOSE[id](); };
   sh.addEventListener('touchend', end); sh.addEventListener('touchcancel', end); });
 
 // ---------- 계정 저장 (db): 브라우저 저장소가 지워져도 책이 남도록 ----------
