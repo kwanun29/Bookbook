@@ -322,6 +322,17 @@ body.cv-flat .bigcover::before,body.cv-flat .bigcover::after,body.cv-flat .cover
 :is(#sheet,#shMenu,#trashSheet,#hlSheet,#mergeSheet,#panel,#dlg,#setp) .sheet{transform:translateY(106%);transition:transform .34s cubic-bezier(.22,.9,.28,1)}
 :is(#sheet,#shMenu,#trashSheet,#hlSheet,#mergeSheet,#panel,#dlg,#setp).open .sheet{transform:none;animation:none}
 .rhead,.toolbar{transition:transform .34s cubic-bezier(.22,.9,.28,1),opacity .25s}
+
+/* ---- 태블릿: 화면 넓게 쓰기 + 가로 두 쪽 펼침 ---- */
+@media(min-width:700px){
+  :is(#home,#shelves,#shelf,#more,#stats,#edit,#add,#pick){max-width:900px}
+  #reader{max-width:760px}
+  :is(#more,#edit,#add) .form{max-width:640px;margin-left:auto;margin-right:auto;width:100%}
+}
+@media(min-width:1000px){:is(#home,#shelves,#shelf,#pick){max-width:1100px}}
+@media(min-width:900px){#home .list:not(.carousel):not(.grid){display:grid;grid-template-columns:1fr 1fr;column-gap:14px;align-content:start}}
+#reader.sp{max-width:1100px}
+.scroll.page.spread #wrap{column-count:2}
 </style>
 </head>
 <body>
@@ -460,6 +471,7 @@ body.cv-flat .bigcover::before,body.cv-flat .bigcover::after,body.cv-flat .cover
   <div class="srow2"><label>문단 정렬</label></div><div class="chips" id="taRow"></div>
   <div class="srow2"><label>하단 위치 표시</label></div><div class="chips" id="posRow"></div>
   <div class="srow2"><label>페이지 넘김 효과 (페이지 모드)</label></div><div class="chips" id="fxRow"></div>
+  <div class="srow2"><label>가로 화면 두 쪽 보기 (태블릿 · 페이지 모드)</label></div><div class="chips" id="spRow"></div>
   <div class="srow2"><label>배경 색</label></div><div class="chips" id="bgRow"></div>
   <div class="row" style="margin-top:4px"><button class="btn sub" id="rsReset" style="margin:0">기본값</button><button class="btn sub" id="theme" aria-label="앱 다크모드 전환" style="margin:0"></button><button class="btn main" id="setDone" style="margin:0">완료</button></div>
 </div></div>
@@ -613,7 +625,7 @@ function shown() {
 }
 function renderHome(){
   $('home').classList.remove('fold'); renderTags(); const items = shown(), L = $('list'), big = viewMode === 'cover' && items.length > 0;
-  const cols = big ? ({ mid: 2, small: 3 }[ui.size] || 0) : 0;
+  const cols0 = big ? ({ mid: 2, small: 3 }[ui.size] || 0) : 0, cols = cols0 ? cols0 + (innerWidth >= 1000 ? 2 : innerWidth >= 700 ? 1 : 0) : 0;
   L.className = cols ? 'grid' : big ? 'carousel' : 'list'; if (cols) L.style.setProperty('--cols', cols);
   $('cnt').textContent = `${homeTab === 'all' ? '전체' : '읽고 있는 책'} ${items.length}권`;
   $('vCover').classList.toggle('on', viewMode === 'cover'); $('vList').classList.toggle('on', viewMode === 'list');
@@ -1008,7 +1020,7 @@ const sc = $('scroll');
 const readerActive = () => $('reader').classList.contains('active');
 
 // ---- 읽기 설정: 글자 크기, 줄간격, 여백, 문단 간격, 정렬, 글꼴, 배경, 밝기 ----
-const RS_DEF = { fs: 18, lh: 1.7, pg: 1, px: 24, pt: 28, pb: 48, ta: 'left', ff: 'sans', bg: 'auto', br: 100, ps: 'off', fx: 'slide' };
+const RS_DEF = { fs: 18, lh: 1.7, pg: 1, px: 24, pt: 28, pb: 48, ta: 'left', ff: 'sans', bg: 'auto', br: 100, ps: 'off', fx: 'slide', sp: 'on' };
 let rs = { ...RS_DEF, ...(store.get('mybook:rs', null) || { fs: store.get('mybook:font', 18) }) };
 const FONTS = {
   sans: '-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif',
@@ -1022,7 +1034,11 @@ const BGS = { auto: { n: '앱 테마 따름' }, white: { n: '흰색', bg: '#ffff
 const SET_ROWS = [['fs', '글자 크기', 12, 40, 1], ['lh', '줄 간격', 1.2, 2.6, 0.1], ['pg', '문단 간격', 0, 2.5, 0.1],
   ['px', '좌우 여백', 0, 64, 2], ['pt', '위 여백', 0, 96, 2], ['pb', '아래 여백', 0, 120, 2], ['br', '밝기', 30, 100, 1]];
 const FMT = { fs: v => v + 'px', lh: v => (+v).toFixed(1), pg: v => (+v).toFixed(1), px: v => v + 'px', pt: v => v + 'px', pb: v => v + 'px', br: v => v + '%' };
+// 태블릿 가로 화면(페이지 모드)에서는 책처럼 왼쪽·오른쪽 두 쪽을 함께 보여줘요
+function updSpread() { const on = mode === 'page' && rs.sp !== 'off' && innerWidth >= 900 && innerWidth > innerHeight;
+  sc.classList.toggle('spread', on); $('reader').classList.toggle('sp', on); }
 function applyRS() {
+  updSpread();
   const r = $('reader').style, bg = BGS[rs.bg] || BGS.auto;
   r.setProperty('--fs', rs.fs + 'px'); r.setProperty('--lh', rs.lh); r.setProperty('--pg', rs.pg + 'em');
   r.setProperty('--px', rs.px + 'px'); r.setProperty('--pt', rs.pt + 'px'); r.setProperty('--pb', rs.pb + 'px');
@@ -1037,11 +1053,13 @@ function buildSet() {
       : `<div class="srow2"><label>${n}</label><div class="stp"><button data-st="${k}" data-d="-1" aria-label="${n} 줄이기">−</button><span class="sv" data-v="${k}">${FMT[k](rs[k])}</span><button data-st="${k}" data-d="1" aria-label="${n} 늘리기">+</button></div></div>`).join('');
   $('ffRow').innerHTML = Object.entries(FNAME).map(([k, n]) => `<button data-ff="${k}" style="font-family:${FONTS[k]}">${n}</button>`).join('');
   $('posRow').innerHTML = [['off', '끄기'], ['num', '쪽수'], ['pct', '퍼센트']].map(([k, n]) => `<button data-ps="${k}">${n}</button>`).join('');
+  $('spRow').innerHTML = [['on', '켜기'], ['off', '끄기']].map(([k, n]) => `<button data-sp="${k}">${n}</button>`).join('');
   $('fxRow').innerHTML = [['slide', '밀기'], ['fade', '페이드'], ['none', '없음']].map(([k, n]) => `<button data-fx="${k}">${n}</button>`).join('');
   $('taRow').innerHTML = [['left', '왼쪽'], ['justify', '양쪽'], ['center', '가운데']].map(([k, n]) => `<button data-ta="${k}">${n}</button>`).join('');
   $('bgRow').innerHTML = Object.entries(BGS).map(([k, v]) => `<button class="sw" data-bg="${k}" aria-label="${v.n}" style="background:${v.bg || 'linear-gradient(135deg,#fff 50%,#111 50%)'}"></button>`).join('');
   $('setp').querySelectorAll('[data-ff]').forEach(b => b.classList.toggle('on', b.dataset.ff === rs.ff));
   $('setp').querySelectorAll('[data-ps]').forEach(b => b.classList.toggle('on', b.dataset.ps === rs.ps));
+  $('setp').querySelectorAll('[data-sp]').forEach(b => b.classList.toggle('on', b.dataset.sp === (rs.sp || 'on')));
   $('setp').querySelectorAll('[data-fx]').forEach(b => b.classList.toggle('on', b.dataset.fx === rs.fx));
   $('setp').querySelectorAll('[data-ta]').forEach(b => b.classList.toggle('on', b.dataset.ta === rs.ta));
   $('setp').querySelectorAll('[data-bg]').forEach(b => b.classList.toggle('on', b.dataset.bg === rs.bg));
@@ -1116,7 +1134,7 @@ const BM_ICO = fill => `<svg viewBox="0 0 24 24" width="16" height="16" style="v
 function updateBm() { if (cur) $('bmBtn').innerHTML = BM_ICO((cur.bookmarks || []).some(b => b.p === lastAnchor) ? 'currentColor' : 'none') + '북마크'; }
 function afterJump() { syncRatio(); persist(); updateBm(); }
 
-function applyMode() { sc.classList.toggle('page', mode === 'page'); if (mode === 'page') sc.scrollTop = 0; $('modeBtn').textContent = mode === 'page' ? '페이지' : '스크롤'; }
+function applyMode() { sc.classList.toggle('page', mode === 'page'); updSpread(); if (mode === 'page') sc.scrollTop = 0; $('modeBtn').textContent = mode === 'page' ? '페이지' : '스크롤'; }
 function showUI(v, auto) { // 메뉴 보이기/숨기기 (auto: 잠시 뒤 자동으로 숨김)
   clearTimeout(uiT); $('reader').classList.toggle('ui', v);
   if (v && auto) uiT = setTimeout(() => { if (!editMode) $('reader').classList.remove('ui'); }, 2500);
@@ -1177,6 +1195,7 @@ addEventListener('keydown', e => {
 // 화면 크기가 바뀌면(회전, 키보드 등) 마지막으로 확인한 문단으로 다시 맞춰요
 let rzT = null;
 addEventListener('resize', () => {
+  updSpread();
   if (!readerActive()) return;
   lock = true; clearTimeout(rzT);
   rzT = setTimeout(() => { if (!gotoAnchor(lastAnchor)) restore(); }, 250);
@@ -1231,6 +1250,8 @@ $('setp').addEventListener('input', e => {
 });
 $('setp').addEventListener('change', e => { if (!e.target.dataset.k) return; setAnchor = null; store.set('mybook:rs', rs); afterJump(); });
 $('setp').addEventListener('click', e => {
+  const spb = e.target.closest('[data-sp]');
+  if (spb) { relayout(() => rs.sp = spb.dataset.sp); buildSet(); return; }
   const op = e.target.closest('[data-ps],[data-fx]');
   if (op) { if (op.dataset.ps) rs.ps = op.dataset.ps; else rs.fx = op.dataset.fx; store.set('mybook:rs', rs); buildSet(); showPct(); return; }
   const st = e.target.closest('[data-st]');
@@ -1654,6 +1675,7 @@ $('shBooks').onclick = e => {
   else if (e.target.closest('.rm')) { sh.bookIds.splice(i, 1); touch(sh); }  // 서재에서 지우는 게 아니라 책장에서만 뺌
   else openBook(id, 'shelf');
 };
+let homeRzT = null; addEventListener('resize', () => { clearTimeout(homeRzT); homeRzT = setTimeout(() => { if ($('home').classList.contains('active')) renderHome(); }, 220); });
 $('shBack').onclick = () => { homeTab = 'shelves'; store.set('mybook:htab', homeTab); renderShelves(); show('shelves'); };
 $('shMore').onclick = () => $('shMenu').classList.add('open');
 $('shMenuClose').onclick = () => $('shMenu').classList.remove('open');
