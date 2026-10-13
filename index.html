@@ -333,6 +333,19 @@ body.cv-flat .bigcover::before,body.cv-flat .bigcover::after,body.cv-flat .cover
 @media(min-width:900px){#home .list:not(.carousel):not(.grid){display:grid;grid-template-columns:1fr 1fr;column-gap:14px;align-content:start}}
 #reader.sp{max-width:1100px}
 .scroll.page.spread #wrap{column-count:2}
+
+/* ---- 컴퓨터(마우스·키보드) 맞춤 ---- */
+@media(min-width:1400px){:is(#home,#shelves,#shelf,#pick){max-width:1400px}#reader.sp{max-width:1400px}}
+@media(hover:hover){
+  *{scrollbar-width:thin}
+  .slide .bigcover,.card{transition:transform .16s,box-shadow .16s}
+  .slide:hover .bigcover{transform:translateY(-4px)}
+  .card:hover{transform:translateY(-1px)}
+  .btn:hover,.chips button:hover{filter:brightness(.96)}
+  #tabbar button:hover{color:var(--text)}
+}
+#dropHint{display:none;position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.55);color:#fff;align-items:center;justify-content:center;font-size:22px;font-weight:800;pointer-events:none}
+#dropHint.on{display:flex}#dropHint span{border:3px dashed #fff;border-radius:24px;padding:48px 64px}
 </style>
 </head>
 <body>
@@ -388,6 +401,7 @@ body.cv-flat .bigcover::before,body.cv-flat .bigcover::after,body.cv-flat .cover
     <input type="file" id="bkFile" accept=".json,application/json" hidden>
     <p class="status" id="bkStatus"></p>
     <h3>도움말</h3>
+    <button class="btn sub" id="installBtn" style="display:none;margin:0 0 12px">앱으로 설치하기 (바탕화면 · 독 · 시작 메뉴)</button>
     <button class="btn sub" id="introAgain" style="margin:0 0 24px">사용법 다시 보기</button>
   </div>
 </section>
@@ -625,7 +639,7 @@ function shown() {
 }
 function renderHome(){
   $('home').classList.remove('fold'); renderTags(); const items = shown(), L = $('list'), big = viewMode === 'cover' && items.length > 0;
-  const cols0 = big ? ({ mid: 2, small: 3 }[ui.size] || 0) : 0, cols = cols0 ? cols0 + (innerWidth >= 1000 ? 2 : innerWidth >= 700 ? 1 : 0) : 0;
+  const cols0 = big ? ({ mid: 2, small: 3 }[ui.size] || 0) : 0, cols = cols0 ? cols0 + (innerWidth >= 1400 ? 3 : innerWidth >= 1000 ? 2 : innerWidth >= 700 ? 1 : 0) : 0;
   L.className = cols ? 'grid' : big ? 'carousel' : 'list'; if (cols) L.style.setProperty('--cols', cols);
   $('cnt').textContent = `${homeTab === 'all' ? '전체' : '읽고 있는 책'} ${items.length}권`;
   $('vCover').classList.toggle('on', viewMode === 'cover'); $('vList').classList.toggle('on', viewMode === 'list');
@@ -847,6 +861,15 @@ async function parsePdf(file, onPage) {
   const meta = await pdf.getMetadata().catch(() => null), info = (meta && meta.info) || {};
   return { title: (/^(about:blank|untitled|microsoft)/i.test((info.Title || '').trim()) ? '' : (info.Title || '').trim()) || file.name.replace(/\.pdf$/i, ''), author: (info.Author || '').trim(), content: paras.join('\n\n'), cover: '', noPick: true };
 }
+// 컴퓨터: 파일을 창에 끌어다 놓으면 바로 책으로 추가돼요
+document.body.insertAdjacentHTML('beforeend', '<div id="dropHint"><span>EPUB · TXT · PDF 파일을 놓으면 책으로 추가돼요</span></div>');
+let dragN = 0; const hasFiles = e => e.dataTransfer && [...(e.dataTransfer.types || [])].includes('Files');
+addEventListener('dragenter', e => { if (!hasFiles(e)) return; dragN++; $('dropHint').classList.add('on'); });
+addEventListener('dragleave', e => { if (!hasFiles(e)) return; dragN = Math.max(0, dragN - 1); if (!dragN) $('dropHint').classList.remove('on'); });
+addEventListener('dragover', e => { if (hasFiles(e)) e.preventDefault(); });
+addEventListener('drop', e => { if (!hasFiles(e)) return; e.preventDefault(); dragN = 0; $('dropHint').classList.remove('on');
+  const fs = [...e.dataTransfer.files].filter(f => /\.(epub|txt|pdf)$/i.test(f.name)); if (!fs.length) return;
+  const dt = new DataTransfer(); fs.forEach(f => dt.items.add(f)); $('file').files = dt.files; $('file').dispatchEvent(new Event('change')); });
 $('file').onchange = async e => {
   const fs = [...e.target.files]; if (!fs.length) return;
   fs.sort((x, y) => x.name.localeCompare(y.name, 'ko', { numeric: true }));
@@ -1176,7 +1199,7 @@ sc.addEventListener('scroll', () => {
 sc.addEventListener('click', e => {
   if ($('setp').classList.contains('open')) { closeSet(); return; }
   if (editMode || String(getSelection()).length) return;
-  const x = e.clientX / innerWidth;
+  const rc = sc.getBoundingClientRect(), x = (e.clientX - rc.left) / rc.width;
   if (mode === 'page' && x < 0.3) turn(-1);
   else if (mode === 'page' && x > 0.7) turn(1);
   else showUI(!$('reader').classList.contains('ui'), true);
@@ -1188,9 +1211,26 @@ sc.addEventListener('touchend', e => {
   const dx = e.changedTouches[0].clientX - tx; tx = null;
   if (Math.abs(dx) > 50) turn(dx < 0 ? 1 : -1);
 }, { passive: true });
-addEventListener('keydown', e => {
-  if (mode !== 'page' || !readerActive() || $('sheet').classList.contains('open') || $('panel').classList.contains('open')) return;
-  if (e.key === 'ArrowRight' || e.key === ' ') turn(1); else if (e.key === 'ArrowLeft') turn(-1);
+addEventListener('keydown', e => { // 키보드: 읽기 화면(←→ ↑↓ PageUp/Down Space Home/End, Esc=뒤로, M=메뉴), 서재 캐러셀(←→)
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName || '') || e.target.isContentEditable) return;
+  const k = e.key, open = id => $(id).classList.contains('open');
+  if (readerActive()) {
+    if (open('sheet') || open('dlg') || open('hlSheet') || open('trashSheet') || open('mergeSheet')) return;
+    if (k === 'Escape') { if (open('setp')) closeSet(); else if (open('panel')) closePanels(); else $('rBack').click(); e.preventDefault(); return; }
+    if (open('setp') || open('panel') || editMode) return;
+    if (k === 'm' || k === 'M') { showUI(!$('reader').classList.contains('ui'), true); return; }
+    const fwd = k === 'ArrowRight' || k === 'ArrowDown' || k === 'PageDown' || (k === ' ' && !e.shiftKey), back = k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp' || (k === ' ' && e.shiftKey);
+    if (mode === 'page') { if (fwd) turn(1); else if (back) turn(-1); else if (k === 'Home') turn(-99999); else if (k === 'End') turn(99999); else return; }
+    else { const h = sc.clientHeight;
+      if (k === 'ArrowDown') sc.scrollTop += 60; else if (k === 'ArrowUp') sc.scrollTop -= 60;
+      else if (k === 'PageDown' || (k === ' ' && !e.shiftKey)) sc.scrollTop += h * 0.9; else if (k === 'PageUp' || (k === ' ' && e.shiftKey)) sc.scrollTop -= h * 0.9;
+      else if (k === 'Home') sc.scrollTop = 0; else if (k === 'End') sc.scrollTop = sc.scrollHeight; else return; }
+    e.preventDefault(); return;
+  }
+  const L = $('list');
+  if ($('home').classList.contains('active') && L.classList.contains('carousel') && (k === 'ArrowRight' || k === 'ArrowLeft')) {
+    const s = L.querySelector('.slide'); L.scrollBy({ left: (k === 'ArrowRight' ? 1 : -1) * (s ? s.getBoundingClientRect().width : 300), behavior: 'smooth' }); e.preventDefault(); }
 });
 // 화면 크기가 바뀌면(회전, 키보드 등) 마지막으로 확인한 문단으로 다시 맞춰요
 let rzT = null;
@@ -1675,6 +1715,11 @@ $('shBooks').onclick = e => {
   else if (e.target.closest('.rm')) { sh.bookIds.splice(i, 1); touch(sh); }  // 서재에서 지우는 게 아니라 책장에서만 뺌
   else openBook(id, 'shelf');
 };
+// 컴퓨터/기기에 앱처럼 설치 (Chrome·Edge 등에서 설치가 가능할 때만 버튼이 보여요)
+let installEv = null;
+addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEv = e; $('installBtn').style.display = ''; });
+addEventListener('appinstalled', () => { installEv = null; $('installBtn').style.display = 'none'; });
+$('installBtn').onclick = async () => { if (!installEv) return; installEv.prompt(); try { await installEv.userChoice; } catch (e) {} installEv = null; $('installBtn').style.display = 'none'; };
 let homeRzT = null; addEventListener('resize', () => { clearTimeout(homeRzT); homeRzT = setTimeout(() => { if ($('home').classList.contains('active')) renderHome(); }, 220); });
 $('shBack').onclick = () => { homeTab = 'shelves'; store.set('mybook:htab', homeTab); renderShelves(); show('shelves'); };
 $('shMore').onclick = () => $('shMenu').classList.add('open');
@@ -1917,7 +1962,8 @@ $('list').addEventListener('pointerdown', e => {
 });
 $('list').addEventListener('pointermove', e => { if (lpTimer && (Math.abs(e.clientX - lpX) > 10 || Math.abs(e.clientY - lpY) > 10)) lpCancel(); });
 ['pointerup', 'pointercancel', 'pointerleave', 'scroll'].forEach(t => $('list').addEventListener(t, lpCancel, true));
-$('list').addEventListener('contextmenu', e => e.preventDefault());
+$('list').addEventListener('contextmenu', e => { e.preventDefault(); const c = e.target.closest('.card,.slide'); if (c && !selectMode && !lpFired && matchMedia('(hover:hover)').matches) openAct(c.dataset.id); });
+$('list').addEventListener('wheel', e => { const L = $('list'); if (!L.classList.contains('carousel') || Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return; e.preventDefault(); L.scrollLeft += e.deltaY * 1.3; }, { passive: false });
 function openAct(id, shelfMode) {
   const b = bookById(id); if (!b) return; actId = id; $('actTitle').textContent = b.title;
   if (shelfMode) {
