@@ -124,7 +124,7 @@ body.dn-r .cover{width:84px;height:122px;font-size:34px}
 #dim{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;z-index:3}
 .rng{width:auto!important;padding:0!important;margin:0!important;background:none!important;border-radius:0!important;height:28px;accent-color:var(--accent)}
 .srow2{display:flex;align-items:center;gap:10px;margin:2px 0}
-.srow2 label{width:72px;font-size:13px;color:var(--sub);flex:none}
+.srow2 label{width:72px;font-size:13px;color:var(--sub);flex:none}.srow2 label:only-child{width:auto;flex:1;margin-top:6px}
 .srow2 .rng{flex:1;min-width:0}
 .srow2 span{width:46px;text-align:right;font-size:13px;flex:none}
 .stp{display:flex;align-items:center;gap:6px;flex:1;justify-content:flex-end}
@@ -150,7 +150,7 @@ body.dn-r .cover{width:84px;height:122px;font-size:34px}
 .sheet textarea{height:38vh;margin-bottom:12px}
 /* 인스타그램 댓글 창처럼: 손잡이 + 제목 + 가운데 내용 + 아래 고정 버튼. 키패드가 뜨면 창 전체가 키패드 위로 올라와요 */
 :is(#sheet,#shMenu,#trashSheet,#hlSheet,#mergeSheet,#panel,#dlg,#setp) .sheet{border-radius:24px 24px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.18)}
-.grab{flex:none;height:30px;margin:-16px -16px 0;display:flex;justify-content:center;align-items:flex-start;padding-top:10px;touch-action:none}.grab::before{content:"";display:block;width:40px;height:5px;border-radius:3px;background:var(--border)}
+.grab{flex:none;height:30px;margin:-16px -16px 0;display:flex;justify-content:center;align-items:flex-start;padding-top:10px;touch-action:none;position:sticky;top:-16px;z-index:3;background:var(--bg);border-radius:24px 24px 0 0}.grab::before{content:"";display:block;width:40px;height:5px;border-radius:3px;background:var(--border)}
 #sheet{bottom:var(--kb,0px)}
 #sheet .sheet{display:flex;flex-direction:column;height:min(72dvh,calc(var(--vvh,100dvh) - 12px));padding-bottom:0;touch-action:pan-y}
 #sHead{text-align:center;font-size:16px;font-weight:800;padding:2px 0 12px;border-bottom:1px solid var(--border);margin:0 -16px 12px}
@@ -632,7 +632,7 @@ let focusId = null; // 방금 만진 책: 화면을 다시 그린 뒤에도 그 
 let hiddenOn = false; const vis = b => !b.hidden || hiddenOn;   // 숨긴 책은 '숨긴 책 보기'를 켠 동안만 보여요
 function shown() {
   let v = view().filter(vis);
-  if (homeTab === 'reading') v = v.filter(b => (b.progress || 0) > 0 && (b.progress || 0) < 0.99);
+  if (homeTab === 'reading') v = v.filter(b => (b.progress || 0) > 0 && (b.progress || 0) < 0.99).sort((x, y) => (y.lastRead || 0) - (x.lastRead || 0)); // 읽고 있는 책: 최근에 본 책이 맨 앞
   if (libTag) v = v.filter(b => (b.tags || []).includes(libTag));
   if (libQ) v = v.filter(b => (b.title + ' ' + b.author + ' ' + (b.tags || []).join(' ')).toLowerCase().includes(libQ));
   return v;
